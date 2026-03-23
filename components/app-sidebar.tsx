@@ -25,6 +25,7 @@ import {
   CalendarIcon,
   LayoutTemplateIcon,
   ShieldIcon,
+  BrainCircuitIcon,
   CoinsIcon,
   ActivityIcon,
   MonitorIcon,
@@ -56,6 +57,7 @@ const navGroups = [
       { title: "Scheduled Posts", url: "/dashboard/content/scheduled", icon: CalendarIcon },
       { title: "Templates", url: "/dashboard/content/templates", icon: LayoutTemplateIcon },
       { title: "Moderation", url: "/dashboard/content/moderation", icon: ShieldIcon },
+      { title: "AI Activity", url: "/dashboard/content/ai-activity", icon: BrainCircuitIcon },
     ],
   },
   {
