@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
 import { EmptyState } from "@/components/empty-state"
 import { Badge } from "@/components/ui/badge"
+import { scoreContent, gradeColor } from "@/lib/quality-score"
 import {
   Table,
   TableBody,
@@ -51,6 +52,7 @@ export default async function GeneratedPostsPage() {
             <TableHead>Source</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Words</TableHead>
+            <TableHead>Quality</TableHead>
             <TableHead>Created</TableHead>
           </TableRow>
         </TableHeader>
@@ -76,6 +78,16 @@ export default async function GeneratedPostsPage() {
                   <Badge variant="outline">{post.status ?? "—"}</Badge>
                 </TableCell>
                 <TableCell>{post.word_count ?? 0}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const score = scoreContent(post.content || "")
+                    return (
+                      <Badge variant={gradeColor(score.grade) as "default" | "secondary" | "destructive"}>
+                        {score.total}/100
+                      </Badge>
+                    )
+                  })()}
+                </TableCell>
                 <TableCell>
                   {new Date(post.created_at).toLocaleDateString()}
                 </TableCell>
