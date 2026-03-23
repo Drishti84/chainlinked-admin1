@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
 import {
   Card,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -23,7 +24,8 @@ export default async function FlagsPage() {
     <div className="flex flex-col gap-4 px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <CardTitle>Feature Flags</CardTitle>
+          <CardTitle>Feature Visibility</CardTitle>
+          <CardDescription>Control which features are visible on the ChainLinked platform</CardDescription>
         </CardHeader>
         <FlagsManager initialFlags={flags} />
       </Card>

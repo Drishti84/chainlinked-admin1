@@ -73,7 +73,7 @@ const navGroups = [
     items: [
       { title: "Background Jobs", url: "/dashboard/system/jobs", icon: CogIcon },
       { title: "Prompts", url: "/dashboard/system/prompts", icon: ScrollTextIcon },
-      { title: "Feature Flags", url: "/dashboard/system/flags", icon: FlagIcon },
+      { title: "Feature Visibility", url: "/dashboard/system/flags", icon: FlagIcon },
     ],
   },
   {
