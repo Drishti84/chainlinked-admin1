@@ -1,0 +1,2 @@
+[  197027ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=l1qVIIUl_aynTYiGjBWMK' failed:  @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13299
+[  198035ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=l1qVIIUl_aynTYiGjBWMK' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:13299

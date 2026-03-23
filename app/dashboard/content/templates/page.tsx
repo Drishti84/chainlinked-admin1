@@ -12,16 +12,27 @@ import {
 import { LayoutTemplateIcon } from "lucide-react"
 
 export default async function TemplatesPage() {
-  const { data: templates, count, error } = await supabaseAdmin
-    .from("templates")
-    .select(
-      "id, name, category, is_public, usage_count, is_ai_generated, created_at, profiles(full_name, email)",
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .limit(50)
+  const [templatesRes, profilesRes] = await Promise.all([
+    supabaseAdmin
+      .from("templates")
+      .select(
+        "id, user_id, name, category, is_public, usage_count, is_ai_generated, created_at",
+        { count: "exact" }
+      )
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabaseAdmin.from("profiles").select("id, full_name, email"),
+  ])
 
-  if (error || !templates || templates.length === 0) {
+  const templates = templatesRes.data ?? []
+  const count = templatesRes.count
+
+  const names = new Map<string, string>()
+  profilesRes.data?.forEach((p) => {
+    names.set(p.id, p.full_name || p.email || p.id.slice(0, 8))
+  })
+
+  if (!templates.length) {
     return (
       <div className="px-4 lg:px-6">
         <EmptyState
@@ -56,17 +67,12 @@ export default async function TemplatesPage() {
         </TableHeader>
         <TableBody>
           {templates.map((template) => {
-            const profile = template.profiles as unknown as {
-              full_name: string
-              email: string
-            } | null
-
             return (
               <TableRow key={template.id}>
                 <TableCell className="font-medium">
                   {template.name ?? "Untitled"}
                 </TableCell>
-                <TableCell>{profile?.full_name ?? "Unknown"}</TableCell>
+                <TableCell>{names.get(template.user_id) ?? "Unknown"}</TableCell>
                 <TableCell>{template.category ?? "—"}</TableCell>
                 <TableCell>
                   <Badge variant={template.is_public ? "default" : "secondary"}>

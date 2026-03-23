@@ -25,24 +25,30 @@ function statusVariant(status: string) {
 }
 
 async function getJobs() {
-  const [companyRes, researchRes, suggestionRes] = await Promise.all([
+  const [companyRes, researchRes, suggestionRes, profilesRes] = await Promise.all([
     supabaseAdmin
       .from("company_context")
-      .select("id, company_name, status, error_message, created_at, completed_at, user_id, profiles(full_name)")
+      .select("id, company_name, status, error_message, created_at, completed_at, user_id")
       .order("created_at", { ascending: false }),
     supabaseAdmin
       .from("research_sessions")
-      .select("id, topics, status, posts_discovered, posts_generated, error_message, created_at, completed_at, user_id, profiles(full_name)")
+      .select("id, topics, status, posts_discovered, posts_generated, error_message, created_at, completed_at, user_id")
       .order("created_at", { ascending: false }),
     supabaseAdmin
       .from("suggestion_generation_runs")
-      .select("id, status, suggestions_requested, suggestions_generated, error_message, created_at, completed_at, user_id, profiles(full_name)")
+      .select("id, status, suggestions_requested, suggestions_generated, error_message, created_at, completed_at, user_id")
       .order("created_at", { ascending: false }),
+    supabaseAdmin.from("profiles").select("id, full_name, email"),
   ])
 
   const company = companyRes.data ?? []
   const research = researchRes.data ?? []
   const suggestions = suggestionRes.data ?? []
+
+  const names = new Map<string, string>()
+  profilesRes.data?.forEach((p) => {
+    names.set(p.id, p.full_name || p.email || p.id.slice(0, 8))
+  })
 
   const all = [
     ...company.map((j) => ({ status: j.status })),
@@ -55,11 +61,11 @@ async function getJobs() {
   const failed = all.filter((j) => j.status === "failed").length
   const total = all.length
 
-  return { company, research, suggestions, running, completed, failed, total }
+  return { company, research, suggestions, names, running, completed, failed, total }
 }
 
 export default async function JobsPage() {
-  const { company, research, suggestions, running, completed, failed, total } =
+  const { company, research, suggestions, names, running, completed, failed, total } =
     await getJobs()
 
   return (
@@ -110,8 +116,7 @@ export default async function JobsPage() {
                     {job.company_name}
                   </TableCell>
                   <TableCell>
-                    {(job.profiles as unknown as { full_name: string })
-                      ?.full_name ?? "-"}
+                    {names.get(job.user_id) ?? "-"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(job.status)}>
@@ -158,8 +163,7 @@ export default async function JobsPage() {
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    {(job.profiles as unknown as { full_name: string })
-                      ?.full_name ?? "-"}
+                    {names.get(job.user_id) ?? "-"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(job.status)}>
@@ -202,8 +206,7 @@ export default async function JobsPage() {
               {suggestions.map((job) => (
                 <TableRow key={job.id}>
                   <TableCell className="font-medium">
-                    {(job.profiles as unknown as { full_name: string })
-                      ?.full_name ?? "-"}
+                    {names.get(job.user_id) ?? "-"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(job.status)}>

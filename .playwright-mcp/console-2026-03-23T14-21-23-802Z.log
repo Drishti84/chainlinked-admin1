@@ -1,0 +1,36 @@
+[ 1965229ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/dashboard/analytics/posthog:0
+[ 1965341ms] ReferenceError: geistSans is not defined
+    at RootLayout (about://React/Server/file:///Volumes/Crucial%20X9/AgiNotReady/chainlinked-admin/.next/dev/server/chunks/ssr/%5Broot-of-the-server%5D__0b~yd0l._.js?0:81:23)
+    at resolveErrorDev (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1919:105)
+    at processFullStringRow (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2434:29)
+    at processFullBinaryRow (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2393:9)
+    at processBinaryChunk (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2502:221)
+    at progress (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:2689:13)
+[ 1968373ms] [WARNING] The resource http://localhost:3001/_next/static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/dashboard/analytics/posthog:0
+[ 1968374ms] [WARNING] The resource http://localhost:3001/_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/dashboard/analytics/posthog:0
+[ 1971898ms] [WARNING] The resource http://localhost:3001/_next/static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/dashboard/analytics/posthog:0
+[ 1971898ms] [WARNING] The resource http://localhost:3001/_next/static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ http://localhost:3001/dashboard/analytics/posthog:0
+[ 4812684ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/dashboard/analytics/posthog:0
+[ 4812824ms] ReferenceError: LinkIcon is not defined
+    at AppSidebar (http://localhost:3001/_next/static/chunks/_09204.j._.js:1453:240)
+    at Object.react_stack_bottom_frame (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:15037:24)
+    at renderWithHooks (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4620:24)
+    at updateFunctionComponent (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6081:21)
+    at beginWork (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6665:639)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopSync (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9449:40)
+    at renderRootSync (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9433:13)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9098:47)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10255:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3001/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:2647:64)
+[ 4813555ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 4929607ms] [WARNING] [PostHog] NEXT_PUBLIC_POSTHOG_KEY not set — analytics disabled @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 5020803ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431

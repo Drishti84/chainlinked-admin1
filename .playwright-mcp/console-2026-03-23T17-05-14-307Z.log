@@ -1,0 +1,10 @@
+[      40ms] [ERROR] [PostHog.js] TypeError: Failed to fetch
+    at method (http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:2833:9)
+    at http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:3663:13
+    at cn._send_request (http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:3664:11)
+    at Fs.retriableRequest (http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:2962:29)
+    at cn.ki (http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:3673:27)
+    at Cs.xt (http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:3534:40)
+    at e (http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:2925:27)
+    at http://localhost:3001/_next/static/chunks/node_modules_0gf25ef._.js:2927:32 @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[      40ms] [WARNING] [PostHog.js] Enqueued failed request for retry in 2251 @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431

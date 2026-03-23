@@ -20,35 +20,37 @@ interface ModerationItem {
 }
 
 export default async function ModerationPage() {
-  const [generatedResult, scheduledResult] = await Promise.all([
+  const [generatedResult, scheduledResult, profilesRes] = await Promise.all([
     supabaseAdmin
       .from("generated_posts")
       .select(
-        "id, content, word_count, created_at, profiles(full_name, email)"
+        "id, user_id, content, word_count, created_at"
       )
       .order("created_at", { ascending: false })
       .limit(50),
     supabaseAdmin
       .from("scheduled_posts")
       .select(
-        "id, content, status, created_at, profiles(full_name, email)"
+        "id, user_id, content, status, created_at"
       )
       .order("created_at", { ascending: false })
       .limit(50),
+    supabaseAdmin.from("profiles").select("id, full_name, email"),
   ])
+
+  const names = new Map<string, string>()
+  profilesRes.data?.forEach((p) => {
+    names.set(p.id, p.full_name || p.email || p.id.slice(0, 8))
+  })
 
   const items: ModerationItem[] = []
 
   if (generatedResult.data) {
     for (const post of generatedResult.data) {
-      const profile = post.profiles as unknown as {
-        full_name: string
-        email: string
-      } | null
       items.push({
         id: post.id,
         content: post.content,
-        user_name: profile?.full_name ?? "Unknown",
+        user_name: names.get(post.user_id) ?? "Unknown",
         type: "generated",
         meta: `${post.word_count ?? 0} words`,
         created_at: post.created_at,
@@ -58,14 +60,10 @@ export default async function ModerationPage() {
 
   if (scheduledResult.data) {
     for (const post of scheduledResult.data) {
-      const profile = post.profiles as unknown as {
-        full_name: string
-        email: string
-      } | null
       items.push({
         id: post.id,
         content: post.content,
-        user_name: profile?.full_name ?? "Unknown",
+        user_name: names.get(post.user_id) ?? "Unknown",
         type: "scheduled",
         meta: post.status ?? "unknown",
         created_at: post.created_at,

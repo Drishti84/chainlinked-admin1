@@ -1,0 +1,2 @@
+[     516ms] [WARNING] [PostHog] Missing or placeholder NEXT_PUBLIC_POSTHOG_KEY - analytics disabled @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[     589ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/settings/api-keys:0

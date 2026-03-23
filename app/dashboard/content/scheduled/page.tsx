@@ -13,16 +13,27 @@ import {
 import { ClockIcon } from "lucide-react"
 
 export default async function ScheduledPostsPage() {
-  const { data: posts, count, error } = await supabaseAdmin
-    .from("scheduled_posts")
-    .select(
-      "id, content, scheduled_for, timezone, status, error_message, posted_at, created_at, profiles(full_name, email)",
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .limit(50)
+  const [postsRes, profilesRes] = await Promise.all([
+    supabaseAdmin
+      .from("scheduled_posts")
+      .select(
+        "id, user_id, content, scheduled_for, timezone, status, error_message, posted_at, created_at",
+        { count: "exact" }
+      )
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabaseAdmin.from("profiles").select("id, full_name, email"),
+  ])
 
-  if (error || !posts || posts.length === 0) {
+  const posts = postsRes.data ?? []
+  const count = postsRes.count
+
+  const names = new Map<string, string>()
+  profilesRes.data?.forEach((p) => {
+    names.set(p.id, p.full_name || p.email || p.id.slice(0, 8))
+  })
+
+  if (!posts.length) {
     return (
       <div className="px-4 lg:px-6">
         <EmptyState
@@ -56,10 +67,6 @@ export default async function ScheduledPostsPage() {
         </TableHeader>
         <TableBody>
           {posts.map((post) => {
-            const profile = post.profiles as unknown as {
-              full_name: string
-              email: string
-            } | null
             const isFailed = post.status === "failed"
 
             return (
@@ -71,7 +78,7 @@ export default async function ScheduledPostsPage() {
                   {post.content?.slice(0, 80) ?? "—"}
                   {post.content && post.content.length > 80 ? "..." : ""}
                 </TableCell>
-                <TableCell>{profile?.full_name ?? "Unknown"}</TableCell>
+                <TableCell>{names.get(post.user_id) ?? "Unknown"}</TableCell>
                 <TableCell>
                   {post.scheduled_for
                     ? new Date(post.scheduled_for).toLocaleString()
