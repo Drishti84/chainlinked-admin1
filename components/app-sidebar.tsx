@@ -29,6 +29,7 @@ import {
   CoinsIcon,
   ActivityIcon,
   MonitorIcon,
+  ZapIcon,
   ScrollTextIcon,
   FlagIcon,
   SettingsIcon,
@@ -63,6 +64,7 @@ const navGroups = [
   {
     label: "Analytics",
     items: [
+      { title: "AI Performance", url: "/dashboard/analytics/ai-performance", icon: ZapIcon },
       { title: "Token Usage", url: "/dashboard/analytics/tokens", icon: CoinsIcon },
       { title: "Feature Usage", url: "/dashboard/analytics/features", icon: BarChart3Icon },
       { title: "PostHog", url: "/dashboard/analytics/posthog", icon: MonitorIcon },
