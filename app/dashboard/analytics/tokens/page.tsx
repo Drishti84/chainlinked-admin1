@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
+import { getOpenRouterBalance } from "@/lib/openrouter"
 import { MetricCard } from "@/components/metric-card"
 import {
   Card,
@@ -16,10 +17,13 @@ import {
 } from "@/components/ui/table"
 
 export default async function TokensAnalyticsPage() {
-  // Fetch all usage logs
-  const { data: logs } = await supabaseAdmin
-    .from("prompt_usage_logs")
-    .select("user_id, total_tokens, estimated_cost, model, feature, response_time_ms, created_at")
+  // Fetch all usage logs and OpenRouter balance in parallel
+  const [{ data: logs }, openRouterBalance] = await Promise.all([
+    supabaseAdmin
+      .from("prompt_usage_logs")
+      .select("user_id, total_tokens, estimated_cost, model, feature, response_time_ms, created_at"),
+    getOpenRouterBalance(),
+  ])
 
   const allLogs = logs ?? []
 
@@ -103,6 +107,42 @@ export default async function TokensAnalyticsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Token Usage Analytics</h1>
+
+      {openRouterBalance && (
+        <div className="px-4 lg:px-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>OpenRouter Account</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Credits Used</p>
+                  <p className="text-xl font-semibold">${openRouterBalance.usage.toFixed(4)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Credit Limit</p>
+                  <p className="text-xl font-semibold">
+                    {openRouterBalance.limit ? `$${openRouterBalance.limit.toFixed(2)}` : "Unlimited"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tier</p>
+                  <p className="text-xl font-semibold">
+                    {openRouterBalance.is_free_tier ? "Free" : "Paid"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Rate Limit</p>
+                  <p className="text-xl font-semibold">
+                    {openRouterBalance.rate_limit.requests}/{openRouterBalance.rate_limit.interval}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard
