@@ -11,7 +11,7 @@ export default async function PostHogAnalyticsPage() {
   const dashboardUrl = process.env.POSTHOG_DASHBOARD_URL
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 lg:px-6">
       <h1 className="text-2xl font-bold">PostHog Analytics</h1>
 
       <Card>

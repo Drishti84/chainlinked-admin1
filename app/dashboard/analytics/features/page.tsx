@@ -92,7 +92,7 @@ export default async function FeaturesAnalyticsPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 lg:px-6">
       <h1 className="text-2xl font-bold">Feature Usage Analytics</h1>
 
       <Card>
