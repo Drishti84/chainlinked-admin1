@@ -27,17 +27,19 @@ export default async function PostHogAnalyticsPage() {
               allow="fullscreen"
             />
           ) : (
-            <EmptyState
-              title="PostHog Dashboard Not Configured"
-              description="To embed your PostHog dashboard:"
-              icon={<BarChartIcon className="size-12" />}
-            />
-            <div className="space-y-2 text-sm text-muted-foreground px-4">
-              <p>1. Go to your PostHog project &rarr; Dashboards</p>
-              <p>2. Click &quot;Share&quot; on a dashboard &rarr; Enable sharing</p>
-              <p>3. Copy the shared URL</p>
-              <p>4. Set <code className="bg-muted px-1 rounded">POSTHOG_DASHBOARD_URL</code> in your .env.local</p>
-            </div>
+            <>
+              <EmptyState
+                title="PostHog Dashboard Not Configured"
+                description="To embed your PostHog dashboard:"
+                icon={<BarChartIcon className="size-12" />}
+              />
+              <div className="space-y-2 text-sm text-muted-foreground px-4">
+                <p>1. Go to your PostHog project &rarr; Dashboards</p>
+                <p>2. Click &quot;Share&quot; on a dashboard &rarr; Enable sharing</p>
+                <p>3. Copy the shared URL</p>
+                <p>4. Set <code className="bg-muted px-1 rounded">POSTHOG_DASHBOARD_URL</code> in your .env.local</p>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
