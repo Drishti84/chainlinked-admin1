@@ -1,6 +1,6 @@
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
 const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST?.replace('/ingest', '') || "https://us.posthog.com"
+const POSTHOG_HOST = "https://us.posthog.com"
 
 export async function posthogQuery(query: string): Promise<unknown> {
   if (!POSTHOG_API_KEY || !POSTHOG_PROJECT_ID) return null

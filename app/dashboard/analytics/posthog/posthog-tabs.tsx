@@ -232,16 +232,14 @@ export function PostHogTabs({ dashboardUrl, posthogHost, projectId, apiKey }: Po
             </div>
           </CardHeader>
           <CardContent>
-            <iframe
-              src={`${posthogHost}/project/${projectId}/heatmaps`}
-              className="h-[700px] w-full rounded-lg border"
-              title="PostHog Heatmaps"
-              allow="fullscreen"
-            />
-            <p className="mt-3 text-xs text-muted-foreground">
-              If the heatmap doesn&apos;t load in the embed, use the &ldquo;Open in PostHog&rdquo; button above.
-              PostHog heatmaps work best when accessed directly.
-            </p>
+            <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+              <MousePointerClickIcon className="size-10 mb-4 opacity-40" />
+              <p className="mb-2 text-sm font-medium">Heatmaps cannot be embedded</p>
+              <p className="text-xs max-w-md">
+                PostHog heatmaps require authentication and block iframe embedding.
+                Use the button above to view heatmaps directly in PostHog.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </TabsContent>

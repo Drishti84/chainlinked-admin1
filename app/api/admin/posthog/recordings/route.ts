@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(
-      `https://us.posthog.com/api/projects/${projectId}/session_recordings?limit=${limit}&order=-start_time`,
+      `https://us.posthog.com/api/projects/${projectId}/session_recordings?limit=${limit}&ordering=-start_time`,
       {
         headers: {
           Authorization: `Bearer ${apiKey}`,
