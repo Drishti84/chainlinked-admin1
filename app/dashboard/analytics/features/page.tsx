@@ -2,10 +2,13 @@ import { supabaseAdmin } from "@/lib/supabase/client"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { FeatureAdoptionChart, FeatureHeatmapGrid } from "@/components/charts/feature-charts"
+import { MetricCard } from "@/components/metric-card"
+import { BarChart3Icon, TrendingUpIcon, UsersIcon } from "lucide-react"
 
 const FEATURES = [
   { key: "generated_posts", label: "Generated Posts" },
@@ -110,34 +113,89 @@ export default async function FeaturesAnalyticsPage() {
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
-      <h1 className="text-2xl font-bold">Feature Usage Analytics</h1>
+      <div>
+        <h1 className="text-2xl font-semibold">Feature Usage Analytics</h1>
+        <p className="text-sm text-muted-foreground">Track feature adoption across users</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <MetricCard
+          title="Features Tracked"
+          value={FEATURES.length}
+          icon={BarChart3Icon}
+          accent="primary"
+        />
+        <MetricCard
+          title="Most Used Feature"
+          value={`${[...featureData].sort((a, b) => b.count - a.count)[0]?.count.toLocaleString() ?? 0}`}
+          subtitle={[...featureData].sort((a, b) => b.count - a.count)[0]?.label ?? "N/A"}
+          icon={TrendingUpIcon}
+          accent="emerald"
+        />
+        <MetricCard
+          title="Users Engaged"
+          value={allUserIds.size}
+          icon={UsersIcon}
+          accent="blue"
+        />
+      </div>
 
       <FeatureAdoptionChart data={adoptionChartData} />
 
-      <Card>
+      <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/3">
         <CardHeader>
-          <CardTitle>Feature Adoption</CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <BarChart3Icon className="size-4" />
+            </div>
+            <div>
+              <CardTitle>Feature Adoption</CardTitle>
+              <CardDescription>{featureData.filter(f => f.count > 0).length} features with activity</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {featureData.map((f) => (
-              <div key={f.key} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{f.label}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {f.count.toLocaleString()} records &middot; {f.users.size} user{f.users.size !== 1 ? "s" : ""}
-                  </span>
+          <div className="space-y-1">
+            {featureData.map((f, i) => {
+              const colors = [
+                { badge: "bg-primary/10 text-primary", bar: "bg-primary" },
+                { badge: "bg-blue-500/10 text-blue-500", bar: "bg-blue-500" },
+                { badge: "bg-emerald-500/10 text-emerald-500", bar: "bg-emerald-500" },
+                { badge: "bg-amber-500/10 text-amber-500", bar: "bg-amber-500" },
+                { badge: "bg-destructive/10 text-destructive", bar: "bg-destructive" },
+                { badge: "bg-purple-500/10 text-purple-500", bar: "bg-purple-500" },
+              ]
+              const color = colors[i % colors.length]
+              return (
+                <div
+                  key={f.key}
+                  className={`hover:bg-muted/20 rounded-lg px-2 py-2 transition-colors space-y-1.5${f.count === 0 ? " opacity-40" : ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`flex size-6 shrink-0 items-center justify-center rounded-md ${color.badge}`}>
+                      <BarChart3Icon className="size-3" />
+                    </div>
+                    <span className="font-medium text-sm">{f.label}</span>
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                        {f.count.toLocaleString()} records
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                        {f.users.size} user{f.users.size !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted">
+                    <div
+                      className={`h-1.5 rounded-full ${color.bar} transition-all`}
+                      style={{
+                        width: `${Math.max((f.count / maxCount) * 100, 0)}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted">
-                  <div
-                    className="h-2 rounded-full bg-primary transition-all"
-                    style={{
-                      width: `${Math.max((f.count / maxCount) * 100, 0)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>

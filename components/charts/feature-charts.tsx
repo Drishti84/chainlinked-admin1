@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { HeatmapCell } from "./heatmap-cell"
 
 const COLORS = [
   "hsl(221, 83%, 53%)",
@@ -111,24 +112,32 @@ export function FeatureHeatmapGrid({ users, features, matrix, maxFeatures }: Fea
   }
 
   return (
-    <Card>
+    <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/3">
       <CardHeader>
-        <CardTitle>Per-User Feature Matrix</CardTitle>
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 ring-1 ring-primary/10">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 text-primary"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+          </div>
+          <div>
+            <CardTitle>Per-User Feature Matrix</CardTitle>
+            <p className="text-xs text-muted-foreground">{users.length} users · {features.length} features</p>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-8">
           <div
-            className="inline-grid gap-px"
+            className="inline-grid gap-px rounded-lg border border-border/50 overflow-visible bg-border/30"
             style={{
               gridTemplateColumns: `160px repeat(${features.length}, minmax(90px, 1fr))`,
             }}
           >
             {/* Header */}
-            <div className="sticky left-0 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground">
+            <div className="sticky left-0 bg-muted/60 px-3 py-2 text-xs font-semibold text-muted-foreground">
               User
             </div>
             {features.map((f) => (
-              <div key={f.key} className="px-2 py-1.5 text-xs font-medium text-muted-foreground text-center truncate">
+              <div key={f.key} className="bg-muted/60 px-2 py-2 text-xs font-semibold text-muted-foreground text-center truncate">
                 {f.label}
               </div>
             ))}
@@ -140,27 +149,25 @@ export function FeatureHeatmapGrid({ users, features, matrix, maxFeatures }: Fea
                 <>
                   <div
                     key={`name-${user.id}`}
-                    className="sticky left-0 bg-background px-2 py-1.5 text-xs font-medium truncate border-t border-border/50"
+                    className="sticky left-0 bg-card px-3 py-2.5 text-xs font-medium truncate"
                   >
                     {user.name}
                   </div>
                   {features.map((f) => {
                     const used = matrixSets[f.key]?.has(user.id) ?? false
                     return (
-                      <div
+                      <HeatmapCell
                         key={`${user.id}-${f.key}`}
-                        className="px-2 py-1.5 text-xs text-center border-t border-border/50 rounded-sm relative group cursor-default"
-                        style={{ backgroundColor: getCellColor(used, userTotal) }}
+                        tooltip={`${user.name}: ${used ? `Uses ${f.label}` : `No ${f.label}`}`}
+                        color={used ? getCellColor(used, userTotal) : undefined}
+                        className="bg-card"
                       >
                         {used ? (
-                          <span className="font-medium text-primary-foreground mix-blend-difference">Yes</span>
+                          <span className="font-semibold text-foreground">Yes</span>
                         ) : (
-                          <span className="text-muted-foreground/40">-</span>
+                          <span className="text-muted-foreground/30">·</span>
                         )}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-popover text-popover-foreground border border-border rounded px-2 py-1 text-xs whitespace-nowrap shadow-md z-10">
-                          {user.name}: {used ? `Uses ${f.label}` : `No ${f.label}`}
-                        </div>
-                      </div>
+                      </HeatmapCell>
                     )
                   })}
                 </>

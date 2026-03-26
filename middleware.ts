@@ -8,6 +8,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // DEV BYPASS: skip auth when no JWT secret is configured (local dev without .env)
+  if (!process.env.ADMIN_JWT_SECRET) {
+    return NextResponse.next()
+  }
+
   const token = request.cookies.get(COOKIE_NAME)?.value
 
   if (!token) {

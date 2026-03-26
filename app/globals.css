@@ -186,41 +186,44 @@
 .dark {
   /* Primary - Brighter LinkedIn blue for dark mode */
   --primary: oklch(0.62 0.15 230);
-  --primary-foreground: oklch(0.15 0.02 230);
+  --primary-foreground: oklch(0.14 0.015 70);
 
   /* Secondary - Brighter terracotta for dark mode */
   --secondary: oklch(0.72 0.11 45);
-  --secondary-foreground: oklch(0.15 0.02 45);
+  --secondary-foreground: oklch(0.14 0.015 70);
 
-  /* Neutral - Dark warm tones */
-  --background: oklch(0.15 0.01 90);
-  --foreground: oklch(0.95 0.005 90);
+  /* ==========================================================================
+     Warm Dark Neutrals — rgba(24, 22, 19) base
+     Hue 70 (warm amber-brown) with subtle chroma for warmth
+     ========================================================================== */
+  --background: oklch(0.14 0.01 70);
+  --foreground: oklch(0.93 0.008 70);
 
-  --card: oklch(0.18 0.01 90);
-  --card-foreground: oklch(0.92 0.005 90);
+  --card: oklch(0.17 0.01 70);
+  --card-foreground: oklch(0.91 0.008 70);
 
-  --popover: oklch(0.18 0.01 90);
-  --popover-foreground: oklch(0.92 0.005 90);
+  --popover: oklch(0.17 0.01 70);
+  --popover-foreground: oklch(0.91 0.008 70);
 
-  --muted: oklch(0.22 0.01 90);
-  --muted-foreground: oklch(0.65 0.01 90);
+  --muted: oklch(0.21 0.01 70);
+  --muted-foreground: oklch(0.60 0.01 70);
 
-  --accent: oklch(0.25 0.03 230);
+  --accent: oklch(0.24 0.025 230);
   --accent-foreground: oklch(0.85 0.06 230);
 
   /* Semantic - Brighter for dark mode */
   --success: oklch(0.65 0.12 145);
-  --success-foreground: oklch(0.15 0.02 145);
+  --success-foreground: oklch(0.14 0.015 70);
 
   --warning: oklch(0.72 0.15 85);
-  --warning-foreground: oklch(0.15 0.03 85);
+  --warning-foreground: oklch(0.14 0.015 70);
 
   --destructive: oklch(0.65 0.18 25);
-  --destructive-foreground: oklch(0.15 0.02 25);
+  --destructive-foreground: oklch(0.14 0.015 70);
 
-  /* UI - slightly brighter borders for better visibility */
-  --border: oklch(0.32 0.01 90);
-  --input: oklch(0.32 0.01 90);
+  /* UI — warm borders */
+  --border: oklch(0.28 0.015 70);
+  --input: oklch(0.28 0.015 70);
   --ring: oklch(0.62 0.15 230);
 
   /* Charts - Vibrant for dark mode */
@@ -230,22 +233,22 @@
   --chart-4: oklch(0.70 0.18 165);
   --chart-5: oklch(0.75 0.18 70);
 
-  /* Sidebar */
-  --sidebar: oklch(0.12 0.01 90);
-  --sidebar-foreground: oklch(0.90 0.005 90);
+  /* Sidebar — slightly darker than background */
+  --sidebar: oklch(0.12 0.01 70);
+  --sidebar-foreground: oklch(0.88 0.008 70);
   --sidebar-primary: oklch(0.62 0.15 230);
-  --sidebar-primary-foreground: oklch(0.15 0.02 230);
-  --sidebar-accent: oklch(0.22 0.02 230);
+  --sidebar-primary-foreground: oklch(0.14 0.015 70);
+  --sidebar-accent: oklch(0.21 0.02 230);
   --sidebar-accent-foreground: oklch(0.85 0.06 230);
-  --sidebar-border: oklch(0.25 0.01 90);
+  --sidebar-border: oklch(0.24 0.012 70);
   --sidebar-ring: oklch(0.62 0.15 230);
 
-  /* Shadows - For dark mode */
-  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.2);
-  --shadow-sm: 0 2px 4px oklch(0 0 0 / 0.25);
-  --shadow-md: 0 4px 8px oklch(0 0 0 / 0.3);
-  --shadow-lg: 0 8px 16px oklch(0 0 0 / 0.35);
-  --shadow-xl: 0 16px 32px oklch(0 0 0 / 0.4);
+  /* Shadows — warm dark shadows */
+  --shadow-xs: 0 1px 2px oklch(0.05 0.01 70 / 0.3);
+  --shadow-sm: 0 2px 4px oklch(0.05 0.01 70 / 0.35);
+  --shadow-md: 0 4px 8px oklch(0.05 0.01 70 / 0.4);
+  --shadow-lg: 0 8px 16px oklch(0.05 0.01 70 / 0.45);
+  --shadow-xl: 0 16px 32px oklch(0.05 0.01 70 / 0.5);
   --shadow-primary: 0 4px 14px oklch(0.62 0.15 230 / 0.3);
   --shadow-secondary: 0 4px 14px oklch(0.72 0.11 45 / 0.3);
 }
@@ -272,7 +275,7 @@
   }
 
   .dark ::selection {
-    background-color: oklch(0.62 0.15 230 / 0.3);
+    background-color: oklch(0.62 0.15 230 / 0.35);
   }
 }
 
@@ -300,11 +303,11 @@
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    background: oklch(0.35 0.01 90);
+    background: oklch(0.30 0.012 70);
   }
 
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.45 0.01 90);
+    background: oklch(0.40 0.012 70);
   }
 }
 
@@ -339,7 +342,7 @@
   }
 
   .dark .glass {
-    background: oklch(0.18 0.01 90 / 0.8);
+    background: oklch(0.17 0.01 70 / 0.85);
   }
 
   /* Text gradients */
@@ -513,9 +516,9 @@
 .dark .shimmer {
   background: linear-gradient(
     90deg,
-    oklch(0.22 0.01 90) 0%,
-    oklch(0.28 0.01 90) 50%,
-    oklch(0.22 0.01 90) 100%
+    oklch(0.21 0.01 70) 0%,
+    oklch(0.27 0.01 70) 50%,
+    oklch(0.21 0.01 70) 100%
   );
   background-size: 200% 100%;
 }

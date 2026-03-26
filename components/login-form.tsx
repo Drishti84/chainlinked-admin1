@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { LockIcon, UserIcon, KeyIcon } from "lucide-react"
 
 export function LoginForm() {
   const router = useRouter()
@@ -44,33 +45,44 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/5 w-full max-w-sm shadow-lg card-glow">
       <CardHeader>
-        <CardTitle className="text-2xl">ChainLinked Admin</CardTitle>
-        <CardDescription>Enter your credentials to sign in.</CardDescription>
+        <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 ring-1 ring-primary/10 mx-auto mb-3">
+          <LockIcon className="size-5 text-primary" />
+        </div>
+        <CardTitle className="text-center text-xl">ChainLinked Admin</CardTitle>
+        <CardDescription className="text-center">Enter your credentials to sign in.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              name="username"
-              type="text"
-              required
-              autoComplete="username"
-              autoFocus
-            />
+            <div className="relative">
+              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                required
+                autoComplete="username"
+                autoFocus
+                className="pl-10 bg-muted/30 border-border/50 focus:bg-card transition-colors"
+              />
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <KeyIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="pl-10 bg-muted/30 border-border/50 focus:bg-card transition-colors"
+              />
+            </div>
           </div>
           {error && (
             <p className="text-sm text-destructive">{error}</p>

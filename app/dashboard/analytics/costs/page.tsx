@@ -3,6 +3,7 @@ import { MetricCard } from "@/components/metric-card"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -14,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { DollarSignIcon, CalendarDaysIcon, CalendarIcon, ClockIcon } from "lucide-react"
 import {
   CostDailyLineChart,
   CostByModelBarChart,
@@ -78,7 +80,9 @@ export default async function CostDashboardPage() {
   // ---- Cost by model ----
   const costByModel: Record<string, number> = {}
   for (const l of allLogs) {
-    const model = (l.model ?? "unknown").split("/").pop() || l.model || "unknown"
+    let model = (l.model ?? "unknown").split("/").pop() || l.model || "unknown"
+    // Shorten long model names for chart readability
+    model = model.replace("-2025-04-14", "").replace("openai/", "")
     costByModel[model] = (costByModel[model] ?? 0) + (l.estimated_cost || 0)
   }
   const costByModelData = Object.entries(costByModel)
@@ -98,7 +102,7 @@ export default async function CostDashboardPage() {
   // ---- Cost by user ----
   const costByUser: Record<string, { cost: number; requests: number }> = {}
   for (const l of allLogs) {
-    const uid = l.user_id
+    const uid = l.user_id || "unknown"
     if (!costByUser[uid]) costByUser[uid] = { cost: 0, requests: 0 }
     costByUser[uid].cost += l.estimated_cost || 0
     costByUser[uid].requests += 1
@@ -136,7 +140,7 @@ export default async function CostDashboardPage() {
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <div>
-        <h1 className="text-2xl font-bold">Cost Dashboard</h1>
+        <h1 className="text-2xl font-semibold">Cost Dashboard</h1>
         <p className="text-sm text-muted-foreground">
           AI spending analysis across models, features, and users
         </p>
@@ -148,21 +152,29 @@ export default async function CostDashboardPage() {
           title="Total AI Spend"
           value={`$${totalSpend.toFixed(4)}`}
           subtitle="All time"
+          icon={DollarSignIcon}
+          accent="primary"
         />
         <MetricCard
           title="This Month"
           value={`$${monthSpend.toFixed(4)}`}
           subtitle={startOfMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          icon={CalendarDaysIcon}
+          accent="blue"
         />
         <MetricCard
           title="This Week"
           value={`$${weekSpend.toFixed(4)}`}
           subtitle="Last 7 days"
+          icon={CalendarIcon}
+          accent="amber"
         />
         <MetricCard
           title="Today"
           value={`$${todaySpend.toFixed(4)}`}
           subtitle={now.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+          icon={ClockIcon}
+          accent="emerald"
         />
       </div>
 
@@ -176,11 +188,13 @@ export default async function CostDashboardPage() {
       </div>
 
       {/* Cost by User */}
-      <Card>
+      <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/3 overflow-hidden">
         <CardHeader>
           <CardTitle>Top Users by Cost</CardTitle>
+          <CardDescription>{userCostRows.length} users with AI usage</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="rounded-lg border border-border/50 overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -193,7 +207,7 @@ export default async function CostDashboardPage() {
             </TableHeader>
             <TableBody>
               {userCostRows.length === 0 ? (
-                <TableRow>
+                <TableRow className="hover:bg-muted/30 transition-colors">
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No cost data
                   </TableCell>
@@ -202,9 +216,9 @@ export default async function CostDashboardPage() {
                 userCostRows.map(([uid, stats]) => {
                   const pct = (stats.cost / maxUserCost) * 100
                   return (
-                    <TableRow key={uid}>
+                    <TableRow key={uid} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium">
-                        {profileMap.get(uid) || uid.slice(0, 8)}
+                        {profileMap.get(uid) || (uid === "unknown" || uid === "null" || !uid ? "Unknown" : uid.slice(0, 8))}
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-mono">
                         ${stats.cost.toFixed(4)}
@@ -229,6 +243,7 @@ export default async function CostDashboardPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

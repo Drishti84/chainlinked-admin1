@@ -79,12 +79,18 @@ function formatTokens(tokens: number | null): string {
   return tokens.toLocaleString()
 }
 
+const PAGE_SIZE = 20
+
 export function PostList({ posts }: { posts: Post[] }) {
   const [selected, setSelected] = useState<Post | null>(null)
   const [conversationMessages, setConversationMessages] = useState<
     ConversationMessage[] | null
   >(null)
   const [loadingConversation, setLoadingConversation] = useState(false)
+  const [page, setPage] = useState(1)
+
+  const totalPages = Math.ceil(posts.length / PAGE_SIZE)
+  const paginatedPosts = posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   useEffect(() => {
     if (!selected?.conversation_id) {
@@ -114,8 +120,36 @@ export function PostList({ posts }: { posts: Post[] }) {
 
   return (
     <>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, posts.length)} of {posts.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm tabular-nums">
+              {page} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="grid gap-3">
-        {posts.map((post) => (
+        {paginatedPosts.map((post) => (
           <Card
             key={post.id}
             className="cursor-pointer transition-shadow hover:shadow-md"
@@ -178,7 +212,7 @@ export function PostList({ posts }: { posts: Post[] }) {
               <div className="flex flex-col items-end gap-1 shrink-0 text-right">
                 <span className="text-xs font-medium">{post.userName}</span>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(post.created_at).toLocaleDateString()}
+                  {new Date(post.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                 </span>
                 {post.estimated_cost != null && (
                   <span className="text-xs font-medium text-muted-foreground">
@@ -198,6 +232,30 @@ export function PostList({ posts }: { posts: Post[] }) {
           </Card>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+            disabled={page === 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm tabular-nums">
+            {page} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+            disabled={page === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       {/* Full post viewer sheet */}
       <Sheet
@@ -268,7 +326,7 @@ export function PostList({ posts }: { posts: Post[] }) {
                     <CalendarIcon className="size-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">Created:</span>
                     <span className="font-medium">
-                      {new Date(selected.created_at).toLocaleDateString()}
+                      {new Date(selected.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
