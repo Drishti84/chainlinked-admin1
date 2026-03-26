@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   LineChart,
   Line,
@@ -326,7 +327,7 @@ export function UserFeatureHeatmap({ users, features, matrix, maxCount }: UserFe
                     </HeatmapCell>
                   )
                 })}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>

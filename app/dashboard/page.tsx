@@ -150,7 +150,7 @@ async function getRecentActivity() {
     items.push({
       type: "scheduled",
       id: s.id,
-      description: `Post ${s.status} for ${new Date(s.scheduled_for).toLocaleDateString()}`,
+      description: `Post ${s.status} for ${new Date(s.scheduled_for).toLocaleDateString("en-US")}`,
       timestamp: s.created_at,
     })
   )

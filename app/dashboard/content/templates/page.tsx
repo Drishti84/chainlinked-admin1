@@ -36,17 +36,23 @@ export default async function TemplatesPage() {
     )
   }
 
+  // Normalize unicode
+  const norm = (s: string | null) => (s ? s.normalize("NFC") : s)
+
   const enrichedTemplates = templates.map((template) => ({
     ...template,
+    name: norm(template.name),
+    content: norm(template.content),
     userName: names.get(template.user_id) ?? "Unknown",
   }))
 
   return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Templates</h1>
-        <p className="text-sm text-muted-foreground">
-          {count ?? templates.length} total templates
+    <div className="px-4 lg:px-6">
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Templates</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          <span className="tabular-nums">{count ?? templates.length}</span>
+          {" "}total templates{" · "}Showing latest 50
         </p>
       </div>
 

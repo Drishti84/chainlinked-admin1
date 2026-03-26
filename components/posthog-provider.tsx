@@ -10,11 +10,17 @@ interface PostHogProviderProps {
 }
 
 export function PostHogProvider({ children }: PostHogProviderProps) {
+  const [mounted, setMounted] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
   const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com"
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
     if (!apiKey) {
       if (process.env.NODE_ENV === "development") {
         console.warn("[PostHog] NEXT_PUBLIC_POSTHOG_KEY not set — analytics disabled")
@@ -39,7 +45,12 @@ export function PostHogProvider({ children }: PostHogProviderProps) {
     })
 
     setIsReady(true)
-  }, [apiKey, apiHost])
+  }, [mounted, apiKey, apiHost])
+
+  // Render children directly during SSR — wrap with PostHog only on client
+  if (!mounted) {
+    return <>{children}</>
+  }
 
   return (
     <PostHogProviderBase client={posthog}>

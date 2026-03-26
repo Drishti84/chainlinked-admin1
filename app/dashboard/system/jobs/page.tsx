@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
-import { MetricCard } from "@/components/metric-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -26,26 +25,31 @@ import {
 
 const RUNNING_STATUSES = ["pending", "scraping", "researching", "analyzing"]
 
-function statusVariant(status: string) {
-  if (status === "completed") return "default" as const
-  if (status === "failed") return "destructive" as const
-  return "secondary" as const
+function statusColor(status: string) {
+  if (status === "completed") return "bg-green-500"
+  if (status === "failed") return "bg-red-500"
+  return "bg-yellow-500"
+}
+
+function statusBadgeClass(status: string) {
+  if (status === "completed") return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
+  if (status === "failed") return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800"
+  return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+}
+
+function countByStatus(jobs: { status: string }[]) {
+  return {
+    completed: jobs.filter((j) => j.status === "completed").length,
+    running: jobs.filter((j) => RUNNING_STATUSES.includes(j.status)).length,
+    failed: jobs.filter((j) => j.status === "failed").length,
+  }
 }
 
 async function getJobs() {
   const [companyRes, researchRes, suggestionRes, profilesRes] = await Promise.all([
-    supabaseAdmin
-      .from("company_context")
-      .select("id, company_name, status, error_message, created_at, completed_at, user_id")
-      .order("created_at", { ascending: false }),
-    supabaseAdmin
-      .from("research_sessions")
-      .select("id, topics, status, posts_discovered, posts_generated, error_message, created_at, completed_at, user_id")
-      .order("created_at", { ascending: false }),
-    supabaseAdmin
-      .from("suggestion_generation_runs")
-      .select("id, status, suggestions_requested, suggestions_generated, error_message, created_at, completed_at, user_id")
-      .order("created_at", { ascending: false }),
+    supabaseAdmin.from("company_context").select("id, company_name, status, error_message, created_at, completed_at, user_id").order("created_at", { ascending: false }),
+    supabaseAdmin.from("research_sessions").select("id, topics, status, posts_discovered, posts_generated, error_message, created_at, completed_at, user_id").order("created_at", { ascending: false }),
+    supabaseAdmin.from("suggestion_generation_runs").select("id, status, suggestions_requested, suggestions_generated, error_message, created_at, completed_at, user_id").order("created_at", { ascending: false }),
     supabaseAdmin.from("profiles").select("id, full_name, email"),
   ])
 
@@ -54,16 +58,9 @@ async function getJobs() {
   const suggestions = suggestionRes.data ?? []
 
   const names = new Map<string, string>()
-  profilesRes.data?.forEach((p) => {
-    names.set(p.id, p.full_name || p.email || p.id.slice(0, 8))
-  })
+  profilesRes.data?.forEach((p) => names.set(p.id, p.full_name || p.email || p.id.slice(0, 8)))
 
-  const all = [
-    ...company.map((j) => ({ status: j.status })),
-    ...research.map((j) => ({ status: j.status })),
-    ...suggestions.map((j) => ({ status: j.status })),
-  ]
-
+  const all = [...company, ...research, ...suggestions]
   const running = all.filter((j) => RUNNING_STATUSES.includes(j.status)).length
   const completed = all.filter((j) => j.status === "completed").length
   const failed = all.filter((j) => j.status === "failed").length
@@ -73,8 +70,17 @@ async function getJobs() {
 }
 
 export default async function JobsPage() {
-  const { company, research, suggestions, names, running, completed, failed, total } =
-    await getJobs()
+  const { company, research, suggestions, names, running, completed, failed, total } = await getJobs()
+
+  const cs = countByStatus(company)
+  const rs = countByStatus(research)
+  const ss = countByStatus(suggestions)
+
+  const runPct = total > 0 ? Math.round((running / total) * 100) : 0
+  const compPct = total > 0 ? Math.round((completed / total) * 100) : 0
+  const failPct = total > 0 ? Math.round((failed / total) * 100) : 0
+
+  const dateFmt = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
 
   return (
     <div className="flex flex-col gap-4 px-4 lg:px-6">

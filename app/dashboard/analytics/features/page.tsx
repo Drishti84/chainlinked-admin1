@@ -21,6 +21,18 @@ const FEATURES = [
   { key: "writing_style_profiles", label: "Writing Style Profiles" },
 ] as const
 
+// Distinct colors for each feature bubble
+const BUBBLE_COLORS = [
+  { bg: "bg-primary/15", ring: "ring-primary/30", text: "text-primary" },
+  { bg: "bg-[var(--chart-2)]/15", ring: "ring-[var(--chart-2)]/30", text: "text-[var(--chart-2)]" },
+  { bg: "bg-[var(--chart-3)]/15", ring: "ring-[var(--chart-3)]/30", text: "text-[var(--chart-3)]" },
+  { bg: "bg-[var(--chart-4)]/15", ring: "ring-[var(--chart-4)]/30", text: "text-[var(--chart-4)]" },
+  { bg: "bg-[var(--chart-5)]/15", ring: "ring-[var(--chart-5)]/30", text: "text-[var(--chart-5)]" },
+  { bg: "bg-purple-500/15", ring: "ring-purple-500/30", text: "text-purple-600 dark:text-purple-400" },
+  { bg: "bg-pink-500/15", ring: "ring-pink-500/30", text: "text-pink-600 dark:text-pink-400" },
+  { bg: "bg-cyan-500/15", ring: "ring-cyan-500/30", text: "text-cyan-600 dark:text-cyan-400" },
+]
+
 async function getFeatureCount(table: string): Promise<number> {
   try {
     const { count } = await supabaseAdmin
@@ -32,13 +44,9 @@ async function getFeatureCount(table: string): Promise<number> {
   }
 }
 
-async function getFeatureUsers(
-  table: string
-): Promise<Set<string>> {
+async function getFeatureUsers(table: string): Promise<Set<string>> {
   try {
-    const { data } = await supabaseAdmin
-      .from(table)
-      .select("user_id")
+    const { data } = await supabaseAdmin.from(table).select("user_id")
     return new Set((data ?? []).map((r) => r.user_id))
   } catch {
     return new Set()
@@ -59,20 +67,14 @@ export default async function FeaturesAnalyticsPage() {
 
   const maxCount = Math.max(...featureData.map((f) => f.count), 1)
 
-  // Collect all unique user IDs
   const allUserIds = new Set<string>()
   for (const f of featureData) {
-    for (const uid of f.users) {
-      allUserIds.add(uid)
-    }
+    for (const uid of f.users) allUserIds.add(uid)
   }
 
   const userIds = Array.from(allUserIds)
   const { data: profiles } = userIds.length > 0
-    ? await supabaseAdmin
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", userIds)
+    ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", userIds)
     : { data: [] }
 
   const profileMap: Record<string, string> = {}
@@ -80,36 +82,30 @@ export default async function FeaturesAnalyticsPage() {
     profileMap[p.id] = p.full_name || p.email || p.id.slice(0, 8)
   }
 
-  const sortedUserIds = userIds.sort((a, b) =>
-    (profileMap[a] ?? a).localeCompare(profileMap[b] ?? b)
-  )
+  const sortedUserIds = userIds.sort((a, b) => (profileMap[a] ?? a).localeCompare(profileMap[b] ?? b))
 
-  // Chart data for bar chart
-  const adoptionChartData = featureData.map((f) => ({
-    label: f.label,
-    count: f.count,
-    users: f.users.size,
-  }))
+  const adoptionChartData = featureData.map((f) => ({ label: f.label, count: f.count, users: f.users.size }))
 
-  // Build matrix for heatmap (feature key -> array of user IDs, serializable)
   const matrixMap: Record<string, string[]> = {}
-  for (const f of featureData) {
-    matrixMap[f.key] = Array.from(f.users)
-  }
+  for (const f of featureData) matrixMap[f.key] = Array.from(f.users)
 
-  // Max features a single user uses (for color intensity)
   const maxUserFeatures = sortedUserIds.reduce((max, uid) => {
     let count = 0
-    for (const f of featureData) {
-      if (f.users.has(uid)) count++
-    }
+    for (const f of featureData) { if (f.users.has(uid)) count++ }
     return Math.max(max, count)
   }, 1)
 
-  const heatmapUsers = sortedUserIds.map((uid) => ({
-    id: uid,
-    name: profileMap[uid] ?? uid.slice(0, 8),
-  }))
+  const heatmapUsers = sortedUserIds.map((uid) => ({ id: uid, name: profileMap[uid] ?? uid.slice(0, 8) }))
+
+  const totalRecords = featureData.reduce((sum, f) => sum + f.count, 0)
+  const totalUniqueUsers = allUserIds.size
+  const rankedFeatures = [...featureData].sort((a, b) => b.count - a.count)
+
+  // Bubble sizing: min 80px, max 160px based on count proportion
+  const bubbleSize = (count: number) => {
+    const pct = maxCount > 0 ? count / maxCount : 0
+    return Math.round(80 + pct * 80)
+  }
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
@@ -197,17 +193,8 @@ export default async function FeaturesAnalyticsPage() {
               )
             })}
           </div>
-        </CardContent>
-      </Card>
-
-      {heatmapUsers.length > 0 && (
-        <FeatureHeatmapGrid
-          users={heatmapUsers}
-          features={FEATURES.map((f) => ({ key: f.key, label: f.label }))}
-          matrix={matrixMap}
-          maxFeatures={maxUserFeatures}
-        />
-      )}
+        )}
+      </div>
     </div>
   )
 }

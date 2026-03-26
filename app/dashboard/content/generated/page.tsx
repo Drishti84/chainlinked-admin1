@@ -37,22 +37,32 @@ export default async function GeneratedPostsPage() {
     )
   }
 
+  // Normalize unicode to NFC to prevent hydration mismatches
+  // (fancy unicode chars like 𝘀𝘁𝗮 can encode differently in Node vs browser)
+  const norm = (s: string | null) => s ? s.normalize("NFC") : s
+
   const enrichedPosts = posts.map((post) => {
-    const score = scoreContent(post.content || "")
+    const content = norm(post.content)
+    const score = scoreContent(content || "")
     return {
       ...post,
+      content,
+      hook: norm(post.hook),
+      cta: norm(post.cta),
       userName: names.get(post.user_id) ?? "Unknown",
       qualityScore: score.total,
       qualityGrade: score.grade,
+      qualityBreakdown: score.breakdown,
     }
   })
 
   return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Generated Posts</h1>
-        <p className="text-sm text-muted-foreground">
-          {count ?? posts.length} total generated posts
+    <div className="px-4 lg:px-6">
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Generated Posts</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          <span className="tabular-nums">{count ?? posts.length}</span>
+          {" "}total posts{" · "}Showing latest 100
         </p>
       </div>
 

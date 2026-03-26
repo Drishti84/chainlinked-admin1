@@ -69,7 +69,7 @@ export function PostHogTabs({ dashboardUrl, posthogHost, projectId, apiKey }: Po
   }
 
   function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleString(undefined, {
+    return new Date(dateStr).toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       hour: "2-digit",

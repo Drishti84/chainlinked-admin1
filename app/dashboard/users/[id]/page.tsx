@@ -223,7 +223,7 @@ export default async function UserDetailPage({
         />
         <MetricCard
           title="Token Usage"
-          value={totalTokens.toLocaleString()}
+          value={totalTokens.toLocaleString("en-US")}
           subtitle={`Est. cost: $${totalCost.toFixed(2)}`}
           icon={CoinsIcon}
           accent="primary"

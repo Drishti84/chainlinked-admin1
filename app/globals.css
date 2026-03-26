@@ -492,6 +492,20 @@
   }
 }
 
+@keyframes themeRipple {
+  0% {
+    clip-path: circle(0% at var(--tw-origin, 95% 5%));
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    clip-path: circle(150% at var(--tw-origin, 95% 5%));
+    opacity: 0;
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;

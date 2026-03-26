@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
-import { MetricCard } from "@/components/metric-card"
 import {
   Card,
   CardContent,
@@ -42,7 +41,7 @@ export default async function CostDashboardPage() {
 
   const now = new Date()
 
-  // ---- Summary cards ----
+  // ---- Summary metrics ----
   const totalSpend = allLogs.reduce((s, l) => s + (l.estimated_cost || 0), 0)
 
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -56,6 +55,9 @@ export default async function CostDashboardPage() {
   const todayStr = now.toISOString().split("T")[0]
   const todayLogs = allLogs.filter((l) => l.created_at.startsWith(todayStr))
   const todaySpend = todayLogs.reduce((s, l) => s + (l.estimated_cost || 0), 0)
+
+  const totalRequests = allLogs.length
+  const avgPerRequest = totalRequests > 0 ? totalSpend / totalRequests : 0
 
   // ---- Daily cost (last 30 days) ----
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -137,6 +139,22 @@ export default async function CostDashboardPage() {
       }
     })
 
+  // ---- Monthly trend cards data ----
+  const monthlyTrendCards = Object.entries(monthlyCostMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month], idx, arr) => {
+      const [y, m] = month.split("-")
+      const d = new Date(Number(y), Number(m) - 1)
+      const cost = monthlyCostMap[month]
+      const prevCost = idx > 0 ? monthlyCostMap[arr[idx - 1][0]] : null
+      const change = prevCost !== null && prevCost > 0 ? ((cost - prevCost) / prevCost) * 100 : null
+      return {
+        label: d.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        cost,
+        change,
+      }
+    })
+
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <div>
@@ -179,12 +197,18 @@ export default async function CostDashboardPage() {
       </div>
 
       {/* Daily Cost Chart */}
-      <CostDailyLineChart data={dailyCostData} />
+      <div className="rounded-xl border bg-card">
+        <CostDailyLineChart data={dailyCostData} />
+      </div>
 
       {/* Cost by Model + Feature */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <CostByModelBarChart data={costByModelData} />
-        <CostByFeatureBarChart data={costByFeatureData} />
+        <div className="rounded-xl border bg-card">
+          <CostByModelBarChart data={costByModelData} />
+        </div>
+        <div className="rounded-xl border bg-card">
+          <CostByFeatureBarChart data={costByFeatureData} />
+        </div>
       </div>
 
       {/* Cost by User */}
@@ -224,7 +248,7 @@ export default async function CostDashboardPage() {
                         ${stats.cost.toFixed(4)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {stats.requests.toLocaleString()}
+                        {stats.requests.toLocaleString("en-US")}
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-mono">
                         ${stats.requests > 0 ? (stats.cost / stats.requests).toFixed(6) : "0"}
@@ -247,8 +271,37 @@ export default async function CostDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Monthly Trend */}
-      <MonthlyTrendChart data={monthlyTrendData} />
+      {/* Monthly Trend Chart */}
+      <div className="rounded-xl border bg-card">
+        <MonthlyTrendChart data={monthlyTrendData} />
+      </div>
+
+      {/* Monthly Trend Cards */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Monthly Breakdown</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {monthlyTrendCards.map((item) => (
+            <Card key={item.label} className="rounded-xl border">
+              <CardContent className="p-4">
+                <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
+                <p className="text-xl font-semibold tabular-nums mt-1">
+                  ${item.cost.toFixed(4)}
+                </p>
+                {item.change !== null && (
+                  <p
+                    className={`text-xs font-medium mt-1 ${
+                      item.change >= 0 ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    {item.change >= 0 ? "+" : ""}
+                    {item.change.toFixed(1)}% vs prev month
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   BarChart,
   Bar,
@@ -58,7 +59,7 @@ export function FeatureAdoptionChart({ data }: FeatureAdoptionChartProps) {
               />
               <Tooltip
                 formatter={(value) => [
-                  `${Number(value).toLocaleString()} records`,
+                  `${Number(value).toLocaleString("en-US")} records`,
                   "Adoption",
                 ]}
                 contentStyle={{
@@ -146,7 +147,7 @@ export function FeatureHeatmapGrid({ users, features, matrix, maxFeatures }: Fea
             {users.map((user) => {
               const userTotal = getUserFeatureCount(user.id)
               return (
-                <>
+                <React.Fragment key={user.id}>
                   <div
                     key={`name-${user.id}`}
                     className="sticky left-0 bg-card px-3 py-2.5 text-xs font-medium truncate"
@@ -170,7 +171,7 @@ export function FeatureHeatmapGrid({ users, features, matrix, maxFeatures }: Fea
                       </HeatmapCell>
                     )
                   })}
-                </>
+                </React.Fragment>
               )
             })}
           </div>

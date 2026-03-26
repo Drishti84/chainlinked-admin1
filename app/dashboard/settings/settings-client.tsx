@@ -219,8 +219,8 @@ export function SettingsClient({ envStatus }: SettingsClientProps) {
               )
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
-import { MetricCard } from "@/components/metric-card"
 import { scoreContent } from "@/lib/quality-score"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -9,14 +8,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   DailyCostChart,
   CostByModelChart,
@@ -146,7 +137,8 @@ export default async function AIPerformancePage() {
     modelMap[model].totalCost += log.estimated_cost || 0
     if (log.feature) modelMap[model].features.add(log.feature)
   }
-  const modelEntries = Object.entries(modelMap).sort((a, b) => b[1].totalCost - a[1].totalCost)
+  const modelEntries = Object.entries(modelMap).sort((a, b) => b[1].calls - a[1].calls)
+  const maxModelCalls = modelEntries.length > 0 ? modelEntries[0][1].calls : 1
 
   // ---- Cost Summary ----
   const totalSpend = allLogs.reduce((s, l) => s + (l.estimated_cost || 0), 0)
