@@ -8,5 +8,15 @@ export default function SettingsPage() {
     openrouter: !!process.env.OPENROUTER_API_KEY,
   }
 
-  return <SettingsClient envStatus={envStatus} />
+  return (
+    <div className="px-4 lg:px-6">
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Manage your admin account and environment configuration.
+        </p>
+      </div>
+      <SettingsClient envStatus={envStatus} />
+    </div>
+  )
 }

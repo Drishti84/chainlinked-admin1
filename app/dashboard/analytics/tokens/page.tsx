@@ -1,21 +1,24 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
 import { getOpenRouterBalance } from "@/lib/openrouter"
-import { MetricCard } from "@/components/metric-card"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 import { DailyCostTrend } from "@/components/charts/token-charts"
+
+const DONUT_COLORS = [
+  "hsl(221, 83%, 53%)",
+  "hsl(262, 83%, 58%)",
+  "hsl(330, 81%, 60%)",
+  "hsl(24, 95%, 53%)",
+  "hsl(142, 71%, 45%)",
+  "hsl(198, 93%, 60%)",
+  "hsl(47, 96%, 53%)",
+  "hsl(0, 72%, 51%)",
+]
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toLocaleString("en-US")
+}
 
 export default async function TokensAnalyticsPage() {
   const [{ data: logs }, openRouterBalance] = await Promise.all([
@@ -32,15 +35,12 @@ export default async function TokensAnalyticsPage() {
   const totalCost = allLogs.reduce((sum, l) => sum + (l.estimated_cost || 0), 0)
 
   const uniqueUsers = new Set(allLogs.map((l) => l.user_id)).size
-  const avgCostPerUser = uniqueUsers > 0 ? totalCost / uniqueUsers : 0
-  const avgCostPerRequest = allLogs.length > 0 ? totalCost / allLogs.length : 0
 
   // This week
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const weekLogs = allLogs.filter((l) => new Date(l.created_at) >= weekAgo)
   const tokensThisWeek = weekLogs.reduce((sum, l) => sum + (l.total_tokens ?? 0), 0)
-  const costThisWeek = weekLogs.reduce((sum, l) => sum + (l.estimated_cost || 0), 0)
 
   // Cost by model (using estimated_cost)
   const costByModel: Record<string, number> = {}
@@ -91,14 +91,13 @@ export default async function TokensAnalyticsPage() {
 
   const userRows = userIds
     .map((uid) => ({
-      id: uid,
-      name: profileMap.get(uid) || uid.slice(0, 8),
+      userId: uid,
+      userName: profileMap.get(uid) || uid.slice(0, 8),
       ...userMap[uid],
-      avgTokens: userMap[uid].requests > 0
-        ? Math.round(userMap[uid].tokens / userMap[uid].requests)
-        : 0,
     }))
-    .sort((a, b) => b.cost - a.cost)
+    .sort((a, b) => b.tokens - a.tokens)
+
+  const maxTokens = userRows.length > 0 ? userRows[0].tokens : 1
 
   // Daily cost trend chart data (last 30 days)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -121,180 +120,245 @@ export default async function TokensAnalyticsPage() {
       cost,
     }))
 
+  // Token ring calculation
+  const TOKEN_CAP = Math.max(totalTokens, 1)
+  const ringRadius = 35
+  const ringCircumference = 2 * Math.PI * ringRadius
+  const ringPct = Math.min(totalTokens / TOKEN_CAP, 1)
+
+  // Donut calculations for model/feature
+  const totalModelCost = modelEntries.reduce((s, [, c]) => s + c, 0)
+  const totalFeatureCost = featureEntries.reduce((s, [, c]) => s + c, 0)
+
+  function buildDonutSegments(entries: [string, number][], total: number) {
+    const segments: { offset: number; length: number; color: string }[] = []
+    const circumference = 2 * Math.PI * 25
+    let accumulated = 0
+    entries.forEach(([, cost], i) => {
+      const pct = total > 0 ? cost / total : 0
+      const length = pct * circumference
+      segments.push({
+        offset: circumference - accumulated,
+        length,
+        color: DONUT_COLORS[i % DONUT_COLORS.length],
+      })
+      accumulated += length
+    })
+    return { segments, circumference }
+  }
+
+  const modelDonut = buildDonutSegments(modelEntries, totalModelCost)
+  const featureDonut = buildDonutSegments(featureEntries, totalFeatureCost)
+
   return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <h1 className="text-2xl font-bold">Token Usage Analytics</h1>
-
-      {openRouterBalance && (
-        <Card>
-          <CardHeader>
-            <CardTitle>OpenRouter Account</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Credits Used</p>
-                <p className="text-xl font-semibold">${openRouterBalance.usage.toFixed(4)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Credit Limit</p>
-                <p className="text-xl font-semibold">
-                  {openRouterBalance.limit ? `$${openRouterBalance.limit.toFixed(2)}` : "Unlimited"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Tier</p>
-                <p className="text-xl font-semibold">
-                  {openRouterBalance.is_free_tier ? "Free" : "Paid"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rate Limit</p>
-                <p className="text-xl font-semibold">
-                  {openRouterBalance.rate_limit.requests}/{openRouterBalance.rate_limit.interval}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard
-          title="Total Tokens"
-          value={totalTokens.toLocaleString("en-US")}
-          subtitle="All time"
-        />
-        <MetricCard
-          title="Total Cost"
-          value={`$${totalCost.toFixed(4)}`}
-          subtitle="All time (from estimated_cost)"
-        />
-        <MetricCard
-          title="Avg Cost / User"
-          value={`$${avgCostPerUser.toFixed(4)}`}
-          subtitle={`${uniqueUsers} users`}
-        />
-        <MetricCard
-          title="Avg Cost / Request"
-          value={`$${avgCostPerRequest.toFixed(6)}`}
-          subtitle={`${allLogs.length} requests`}
-        />
-        <MetricCard
-          title="Tokens This Week"
-          value={tokensThisWeek.toLocaleString("en-US")}
-          subtitle="Last 7 days"
-        />
-        <MetricCard
-          title="Cost This Week"
-          value={`$${costThisWeek.toFixed(4)}`}
-          subtitle="Last 7 days"
-        />
+    <div className="space-y-5 px-4 lg:px-6">
+      {/* Page Header */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Token Usage</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Monitor API token consumption and costs across users and models.
+        </p>
       </div>
 
+      {/* Consumption Meter */}
+      <div className="rounded-xl border bg-card p-5 mb-5">
+        <div className="flex items-center gap-6">
+          {/* Token ring */}
+          <div className="relative shrink-0" style={{ width: 80, height: 80 }}>
+            <svg width={80} height={80} className="-rotate-90">
+              <circle cx={40} cy={40} r={ringRadius} fill="none" className="stroke-muted" strokeWidth={5} />
+              <circle
+                cx={40}
+                cy={40}
+                r={ringRadius}
+                fill="none"
+                className="stroke-primary"
+                strokeWidth={5}
+                strokeLinecap="round"
+                strokeDasharray={ringCircumference}
+                strokeDashoffset={ringCircumference * (1 - ringPct)}
+                style={{ transition: "stroke-dashoffset 1s ease-out" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-lg font-bold tabular-nums">{formatTokens(totalTokens)}</span>
+              <span className="text-[9px] text-muted-foreground">tokens</span>
+            </div>
+          </div>
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 flex-1">
+            <div>
+              <p className="text-lg font-semibold tabular-nums">${totalCost.toFixed(4)}</p>
+              <p className="text-[11px] text-muted-foreground">total cost</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold tabular-nums">{allLogs.length.toLocaleString("en-US")}</p>
+              <p className="text-[11px] text-muted-foreground">requests</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold tabular-nums">{uniqueUsers.toLocaleString("en-US")}</p>
+              <p className="text-[11px] text-muted-foreground">unique users</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold tabular-nums">{formatTokens(tokensThisWeek)}</p>
+              <p className="text-[11px] text-muted-foreground">this week</p>
+            </div>
+          </div>
+        </div>
+        {/* OpenRouter balance row */}
+        {openRouterBalance && (
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t text-xs text-muted-foreground">
+            <Badge variant={openRouterBalance.is_free_tier ? "secondary" : "default"}>
+              OpenRouter {openRouterBalance.is_free_tier ? "Free" : "Paid"}
+            </Badge>
+            <span>Credits: ${openRouterBalance.usage.toFixed(4)}</span>
+            <span>Limit: {openRouterBalance.limit ? `$${openRouterBalance.limit.toFixed(2)}` : "Unlimited"}</span>
+            <span>Rate: {openRouterBalance.rate_limit.requests}/{openRouterBalance.rate_limit.interval}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Cost by Model + Cost by Feature — Side by side with donut rings */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Cost by Model */}
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-4">Cost by Model</h3>
+          {modelEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No data</p>
+          ) : (
+            <div className="flex items-start gap-5">
+              <div className="shrink-0" style={{ width: 60, height: 60 }}>
+                <svg width={60} height={60} className="-rotate-90">
+                  <circle cx={30} cy={30} r={25} fill="none" className="stroke-muted" strokeWidth={4} />
+                  {modelDonut.segments.map((seg, i) => (
+                    <circle
+                      key={i}
+                      cx={30}
+                      cy={30}
+                      r={25}
+                      fill="none"
+                      stroke={seg.color}
+                      strokeWidth={4}
+                      strokeDasharray={`${seg.length} ${modelDonut.circumference - seg.length}`}
+                      strokeDashoffset={seg.offset}
+                      strokeLinecap="round"
+                    />
+                  ))}
+                </svg>
+              </div>
+              <ul className="flex-1 space-y-2 min-w-0">
+                {modelEntries.map(([model, cost], i) => (
+                  <li key={model} className="flex items-center gap-2 text-sm">
+                    <span
+                      className="inline-block size-2 rounded-full shrink-0"
+                      style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                    />
+                    <span className="truncate flex-1 text-muted-foreground">{model}</span>
+                    <span className="tabular-nums font-semibold shrink-0">${cost.toFixed(4)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Cost by Feature */}
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="text-sm font-semibold mb-4">Cost by Feature</h3>
+          {featureEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No data</p>
+          ) : (
+            <div className="flex items-start gap-5">
+              <div className="shrink-0" style={{ width: 60, height: 60 }}>
+                <svg width={60} height={60} className="-rotate-90">
+                  <circle cx={30} cy={30} r={25} fill="none" className="stroke-muted" strokeWidth={4} />
+                  {featureDonut.segments.map((seg, i) => (
+                    <circle
+                      key={i}
+                      cx={30}
+                      cy={30}
+                      r={25}
+                      fill="none"
+                      stroke={seg.color}
+                      strokeWidth={4}
+                      strokeDasharray={`${seg.length} ${featureDonut.circumference - seg.length}`}
+                      strokeDashoffset={seg.offset}
+                      strokeLinecap="round"
+                    />
+                  ))}
+                </svg>
+              </div>
+              <ul className="flex-1 space-y-2 min-w-0">
+                {featureEntries.map(([feature, cost], i) => (
+                  <li key={feature} className="flex items-center gap-2 text-sm">
+                    <span
+                      className="inline-block size-2 rounded-full shrink-0"
+                      style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                    />
+                    <span className="truncate flex-1 text-muted-foreground">{feature}</span>
+                    <span className="tabular-nums font-semibold shrink-0">${cost.toFixed(4)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Daily Cost Trend */}
       <DailyCostTrend data={dailyCostData} />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cost by Model</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {modelEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No data</p>
-            ) : (
-              <ul className="space-y-2">
-                {modelEntries.map(([model, cost]) => (
-                  <li
-                    key={model}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="font-medium">{model}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      ${cost.toFixed(4)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Cost by Feature</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {featureEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No data</p>
-            ) : (
-              <ul className="space-y-2">
-                {featureEntries.map(([feature, cost]) => (
-                  <li
-                    key={feature}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="font-medium">{feature}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      ${cost.toFixed(4)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Per-User Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead className="text-right">Total Tokens</TableHead>
-                <TableHead className="text-right">Total Cost</TableHead>
-                <TableHead className="text-right">Requests</TableHead>
-                <TableHead className="text-right">Avg Tokens/Req</TableHead>
-                <TableHead className="text-right">Last Used</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {userRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No usage data
-                  </TableCell>
-                </TableRow>
-              ) : (
-                userRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{row.name}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {row.tokens.toLocaleString("en-US")}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
+      {/* User Leaderboard */}
+      <div className="rounded-xl border bg-card p-5">
+        <h3 className="text-sm font-semibold mb-4">User Leaderboard</h3>
+        {userRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No usage data</p>
+        ) : (
+          <div className="space-y-0.5">
+            {userRows.map((row, i) => {
+              const barPct = maxTokens > 0 ? (row.tokens / maxTokens) * 100 : 0
+              const rankColor =
+                i === 0
+                  ? "text-yellow-600"
+                  : i === 1
+                    ? "text-gray-400"
+                    : i === 2
+                      ? "text-orange-600"
+                      : "text-muted-foreground"
+              return (
+                <div
+                  key={row.userId}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-muted/30 transition-colors"
+                >
+                  <span className={`text-sm font-bold tabular-nums w-6 text-center ${rankColor}`}>
+                    {i + 1}
+                  </span>
+                  <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold shrink-0">
+                    {row.userName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{row.userName}</p>
+                    <div className="h-1.5 rounded-full bg-muted mt-1 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-700"
+                        style={{ width: `${barPct}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-semibold tabular-nums">
+                      {row.tokens.toLocaleString("en-US")} tok
+                    </p>
+                    <p className="text-[11px] text-primary font-semibold tabular-nums">
                       ${row.cost.toFixed(4)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {row.requests.toLocaleString("en-US")}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {row.avgTokens.toLocaleString("en-US")}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {new Date(row.lastUsed).toLocaleDateString("en-US")}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

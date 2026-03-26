@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   BarChart,
   Bar,
@@ -137,9 +138,8 @@ export function FeatureHeatmapGrid({ users, features, matrix, maxFeatures }: Fea
             {users.map((user) => {
               const userTotal = getUserFeatureCount(user.id)
               return (
-                <>
+                <React.Fragment key={user.id}>
                   <div
-                    key={`name-${user.id}`}
                     className="sticky left-0 bg-background px-2 py-1.5 text-xs font-medium truncate border-t border-border/50"
                   >
                     {user.name}
@@ -163,7 +163,7 @@ export function FeatureHeatmapGrid({ users, features, matrix, maxFeatures }: Fea
                       </div>
                     )
                   })}
-                </>
+                </React.Fragment>
               )
             })}
           </div>

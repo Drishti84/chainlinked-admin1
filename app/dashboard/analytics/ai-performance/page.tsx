@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
-import { MetricCard } from "@/components/metric-card"
 import { scoreContent } from "@/lib/quality-score"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -8,14 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   DailyCostChart,
   CostByModelChart,
@@ -26,6 +17,14 @@ import {
 
 function formatTime(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
+}
+
+function getTimeColor(avgTimeStr: string): string {
+  if (avgTimeStr === "-") return "text-muted-foreground"
+  const seconds = parseFloat(avgTimeStr)
+  if (seconds <= 2) return "text-emerald-500"
+  if (seconds <= 5) return "text-amber-500"
+  return "text-red-500"
 }
 
 interface PromptCategory {
@@ -167,7 +166,8 @@ export default async function AIPerformancePage() {
     modelMap[model].totalCost += log.estimated_cost || 0
     if (log.feature) modelMap[model].features.add(log.feature)
   }
-  const modelEntries = Object.entries(modelMap).sort((a, b) => b[1].totalCost - a[1].totalCost)
+  const modelEntries = Object.entries(modelMap).sort((a, b) => b[1].calls - a[1].calls)
+  const maxModelCalls = modelEntries.length > 0 ? modelEntries[0][1].calls : 1
 
   // ---- Cost Summary (use actual estimated_cost) ----
   const totalSpend = allLogs.reduce((s, l) => s + (l.estimated_cost || 0), 0)
@@ -277,221 +277,242 @@ export default async function AIPerformancePage() {
 
   return (
     <div className="space-y-8 px-4 lg:px-6">
-      <div>
-        <h1 className="text-2xl font-semibold">AI Performance</h1>
-        <p className="text-sm text-muted-foreground">
-          Prompt effectiveness, model comparison, and output quality
+      {/* Page Header */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">AI Performance</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Analyze prompt costs, model performance, and output quality.
         </p>
       </div>
 
-      {/* Section: Cost Summary */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Cost Summary</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            title="Total AI Spend"
-            value={`$${totalSpend.toFixed(4)}`}
-            subtitle="All time"
-          />
-          <MetricCard
-            title="Cost This Week"
-            value={`$${costThisWeek.toFixed(4)}`}
-            subtitle="Last 7 days"
-          />
-          <MetricCard
-            title="Avg Cost Per Request"
-            value={`$${avgCostPerRequest.toFixed(6)}`}
-            subtitle={`${allLogs.length} total requests`}
-          />
-        </div>
-      </div>
+      {/* Cost Summary Hero Banner */}
+      <Card className="rounded-xl">
+        <CardContent className="py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+            <div className="flex flex-col items-center justify-center py-4 sm:py-0 sm:px-6">
+              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Spent</span>
+              <span className="text-3xl font-bold tabular-nums mt-1">${totalSpend.toFixed(4)}</span>
+              <span className="text-xs text-muted-foreground mt-1">
+                {allLogs.length.toLocaleString("en-US")} requests all time
+              </span>
+            </div>
+            <div className="flex flex-col items-center justify-center py-4 sm:py-0 sm:px-6">
+              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">This Week</span>
+              <span className="text-3xl font-bold tabular-nums mt-1">${costThisWeek.toFixed(4)}</span>
+              <span className="text-xs text-muted-foreground mt-1">
+                {weekLogs.length.toLocaleString("en-US")} requests last 7 days
+              </span>
+            </div>
+            <div className="flex flex-col items-center justify-center py-4 sm:py-0 sm:px-6">
+              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Per Request</span>
+              <span className="text-3xl font-bold tabular-nums mt-1">${avgCostPerRequest.toFixed(6)}</span>
+              <span className="text-xs text-muted-foreground mt-1">average cost per call</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Charts Section */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DailyCostChart data={dailyCostData} />
-        <CostByModelChart data={costByModelData} />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DailyTokenChart data={dailyTokenData} />
-        <UsageByFeatureChart data={usageByFeatureData} />
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Cost &amp; Usage Charts</h2>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <DailyCostChart data={dailyCostData} />
+          </div>
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <CostByModelChart data={costByModelData} />
+          </div>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <DailyTokenChart data={dailyTokenData} />
+          </div>
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <UsageByFeatureChart data={usageByFeatureData} />
+          </div>
+        </div>
       </div>
 
       {/* Per-User Feature Heatmap */}
       {allFeatures.length > 0 && heatmapUsers.length > 0 && (
-        <UserFeatureHeatmap
-          users={heatmapUsers}
-          features={allFeatures}
-          matrix={userFeatureMatrix}
-          maxCount={heatmapMaxCount}
-        />
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">User Heatmap</h2>
+          <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <UserFeatureHeatmap
+              users={heatmapUsers}
+              features={allFeatures}
+              matrix={userFeatureMatrix}
+              maxCount={heatmapMaxCount}
+            />
+          </div>
+        </div>
       )}
 
-      {/* Section: Prompt Performance */}
-      <div className="space-y-6">
+      {/* Section: Prompt Performance — Category-Colored Cards */}
+      <div className="space-y-4">
         <h2 className="text-lg font-semibold">Prompt Performance</h2>
-        {categories
-          .filter((cat) => cat.prompts.length > 0)
-          .map((cat) => (
-            <Card key={cat.label}>
-              <CardHeader>
-                <CardTitle>{cat.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Prompt</TableHead>
-                      <TableHead className="text-right">Calls</TableHead>
-                      <TableHead className="text-right">Avg In Tokens</TableHead>
-                      <TableHead className="text-right">Avg Out Tokens</TableHead>
-                      <TableHead className="text-right">Avg Time</TableHead>
-                      <TableHead className="text-right">Avg Cost/Call</TableHead>
-                      <TableHead className="text-right">Success Rate</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cat.prompts.map((p) => (
-                      <TableRow key={p.type}>
-                        <TableCell>
-                          <div className={p.calls === 0 ? "text-muted-foreground" : ""}>
-                            <span className="font-medium">{p.name}</span>
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              {p.type}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell
-                          className={`text-right tabular-nums ${p.calls === 0 ? "text-muted-foreground" : ""}`}
-                        >
-                          {p.calls}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right tabular-nums ${p.calls === 0 ? "text-muted-foreground" : ""}`}
-                        >
-                          {p.calls === 0 ? "-" : p.avgInputTokens.toLocaleString("en-US")}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right tabular-nums ${p.calls === 0 ? "text-muted-foreground" : ""}`}
-                        >
-                          {p.calls === 0 ? "-" : p.avgOutputTokens.toLocaleString("en-US")}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right tabular-nums ${p.calls === 0 ? "text-muted-foreground" : ""}`}
-                        >
-                          {p.avgResponseTime}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right tabular-nums ${p.calls === 0 ? "text-muted-foreground" : ""}`}
-                        >
-                          {p.avgCostPerCall}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right tabular-nums ${p.calls === 0 ? "text-muted-foreground" : ""}`}
-                        >
-                          {p.successRate}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ))}
+        {(() => {
+          const categoryColors: Record<string, { header: string; dot: string }> = {
+            "Compose & Remix": { header: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800", dot: "bg-blue-500" },
+            "Post Types": { header: "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800", dot: "bg-green-500" },
+            "Carousel": { header: "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800", dot: "bg-purple-500" },
+            "Research & Suggestions": { header: "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800", dot: "bg-orange-500" },
+            "Other": { header: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", dot: "bg-gray-500" },
+          }
+          return categories.filter((cat) => cat.prompts.length > 0).map((cat) => {
+            const colors = categoryColors[cat.label] || categoryColors["Other"]
+            const totalCalls = cat.prompts.reduce((s, p) => s + p.calls, 0)
+            return (
+              <div key={cat.label} className="rounded-xl border bg-card overflow-hidden">
+                {/* Category header band */}
+                <div className={`px-4 py-2.5 border-b ${colors.header}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`size-2.5 rounded-full ${colors.dot}`} />
+                      <span className="text-sm font-semibold">{cat.label}</span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">({cat.prompts.length} prompts)</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">{totalCalls.toLocaleString("en-US")} total calls</span>
+                  </div>
+                </div>
+                {/* Prompt rows */}
+                <div className="divide-y">
+                  {cat.prompts.map((p) => (
+                    <div key={p.type} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                      {/* Name + badges */}
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className={`text-sm font-medium truncate ${p.calls === 0 ? "text-muted-foreground" : ""}`}>
+                          {p.name}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] h-4 px-1 font-mono shrink-0">{p.type}</Badge>
+                        {p.isActive && (
+                          <span className="size-1.5 rounded-full bg-green-500 shrink-0" title="Active" />
+                        )}
+                      </div>
+                      {/* Stats */}
+                      <div className="flex items-center gap-3 text-[11px] tabular-nums text-muted-foreground shrink-0">
+                        <span className="w-14 text-right"><span className="font-semibold text-foreground">{p.calls.toLocaleString("en-US")}</span> calls</span>
+                        <span className={`w-12 text-right font-medium ${getTimeColor(p.avgResponseTime)}`}>{p.avgResponseTime}</span>
+                        <span className="w-20 text-right">{p.calls === 0 ? "-" : `${p.avgInputTokens.toLocaleString("en-US")}/${p.avgOutputTokens.toLocaleString("en-US")}`}</span>
+                        <span className="w-16 text-right font-semibold text-primary">{p.avgCostPerCall}</span>
+                        <span className="w-10 text-right">{p.successRate}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })
+        })()}
       </div>
 
-      {/* Section: Model Comparison */}
+      {/* Section: Model Comparison — Ranked List */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Model Comparison</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {modelEntries.map(([model, stats]) => {
-            const shortModelName = model.split("/").pop() || model
-            const avgMs = formatTime(stats.calls > 0 ? stats.totalTime / stats.calls : 0)
-            const avgTokens = stats.calls > 0 ? Math.round(stats.totalTokens / stats.calls) : 0
-            const costPerCall = stats.calls > 0 ? stats.totalCost / stats.calls : 0
+        <Card className="rounded-xl">
+          <CardContent className="py-2">
+            {modelEntries.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">No model data yet</p>
+            )}
+            <div className="divide-y divide-border">
+              {modelEntries.map(([model, stats], index) => {
+                const shortModelName = model.split("/").pop() || model
+                const avgMs = formatTime(stats.calls > 0 ? stats.totalTime / stats.calls : 0)
+                const avgTokens = stats.calls > 0 ? Math.round(stats.totalTokens / stats.calls) : 0
+                const costPerCall = stats.calls > 0 ? stats.totalCost / stats.calls : 0
+                const usagePct = (stats.calls / maxModelCalls) * 100
 
-            return (
-              <Card key={model}>
-                <CardHeader>
-                  <CardTitle className="font-mono text-base">{shortModelName}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Calls:</span> {stats.calls}
+                return (
+                  <div key={model} className="py-3 space-y-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      {/* Left: rank + name */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-sm font-bold text-muted-foreground w-5 text-right shrink-0">
+                          {index + 1}
+                        </span>
+                        <span className="font-mono text-sm font-medium truncate">{shortModelName}</span>
+                        {Array.from(stats.features).map((f) => (
+                          <Badge key={f} variant="secondary" className="text-xs shrink-0">
+                            {f}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {/* Right: stats row */}
+                      <div className="flex items-center gap-4 text-sm tabular-nums flex-wrap pl-8 sm:pl-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">Calls</span>
+                          <span className="font-medium">{stats.calls.toLocaleString("en-US")}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">Avg Time</span>
+                          <span className="font-medium">{avgMs}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">Avg Tokens</span>
+                          <span className="font-medium">{avgTokens.toLocaleString("en-US")}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">Total Cost</span>
+                          <span className="font-medium">${stats.totalCost.toFixed(4)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">Cost/Call</span>
+                          <span className="font-medium">${costPerCall.toFixed(6)}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Avg Time:</span> {avgMs}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Avg Tokens:</span>{" "}
-                      {avgTokens.toLocaleString("en-US")}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Total Cost:</span> $
-                      {stats.totalCost.toFixed(4)}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Cost/Call:</span> $
-                      {costPerCall.toFixed(6)}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Features:</span>{" "}
-                      {Array.from(stats.features).map((f) => (
-                        <Badge key={f} variant="secondary" className="mr-1 text-xs">
-                          {f}
-                        </Badge>
-                      ))}
+
+                    {/* Usage proportion bar */}
+                    <div className="pl-8">
+                      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${usagePct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-          {modelEntries.length === 0 && (
-            <p className="text-sm text-muted-foreground col-span-full">No model data yet</p>
-          )}
-        </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Section: Quality Distribution */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Output Quality Distribution</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            title="Low Quality (0-40)"
-            value={`${lowCount}`}
-            subtitle={`${lowPct}% of ${totalPosts} posts`}
-          />
-          <MetricCard
-            title="Medium Quality (41-70)"
-            value={`${medCount}`}
-            subtitle={`${medPct}% of ${totalPosts} posts`}
-          />
-          <MetricCard
-            title="High Quality (71-100)"
-            value={`${highCount}`}
-            subtitle={`${highPct}% of ${totalPosts} posts`}
-          />
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Quality</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center justify-between">
-                <span className="text-muted-foreground">Overall Average Score</span>
-                <span className="font-medium tabular-nums">{avgQuality.toFixed(1)}</span>
-              </li>
-              {Array.from(featureSet).map((feature) => {
-                return (
-                  <li key={feature} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{feature}</span>
-                    <span className="font-medium tabular-nums">{avgQuality.toFixed(1)}</span>
-                  </li>
-                )
-              })}
-            </ul>
+        <Card className="rounded-xl">
+          <CardContent className="py-5">
+            <div className="flex flex-col gap-4">
+              {/* Quality badge pills */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5">
+                  <span className="text-xs font-medium text-red-500">Low (0-40)</span>
+                  <span className="text-sm font-bold tabular-nums">{lowCount.toLocaleString("en-US")}</span>
+                  <span className="text-xs text-muted-foreground">{lowPct}%</span>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5">
+                  <span className="text-xs font-medium text-amber-500">Medium (41-70)</span>
+                  <span className="text-sm font-bold tabular-nums">{medCount.toLocaleString("en-US")}</span>
+                  <span className="text-xs text-muted-foreground">{medPct}%</span>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5">
+                  <span className="text-xs font-medium text-emerald-500">High (71-100)</span>
+                  <span className="text-sm font-bold tabular-nums">{highCount.toLocaleString("en-US")}</span>
+                  <span className="text-xs text-muted-foreground">{highPct}%</span>
+                </div>
+              </div>
+
+              {/* Average quality summary */}
+              <div className="flex items-center gap-3 pt-2 border-t border-border">
+                <span className="text-sm text-muted-foreground">
+                  Overall average score across {totalPosts.toLocaleString("en-US")} posts
+                </span>
+                <span className="text-lg font-bold tabular-nums">{avgQuality.toFixed(1)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

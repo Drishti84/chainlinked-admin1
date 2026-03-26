@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   LineChart,
   Line,
@@ -265,8 +266,8 @@ export function UserFeatureHeatmap({ users, features, matrix, maxCount }: UserFe
 
             {/* Data rows */}
             {users.map((user) => (
-              <>
-                <div key={`name-${user.id}`} className="sticky left-0 bg-background px-2 py-1.5 text-xs font-medium truncate border-t border-border/50">
+              <React.Fragment key={user.id}>
+                <div className="sticky left-0 bg-background px-2 py-1.5 text-xs font-medium truncate border-t border-border/50">
                   {user.name}
                 </div>
                 {features.map((f) => {
@@ -284,7 +285,7 @@ export function UserFeatureHeatmap({ users, features, matrix, maxCount }: UserFe
                     </div>
                   )
                 })}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>

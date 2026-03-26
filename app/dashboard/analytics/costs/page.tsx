@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
-import { MetricCard } from "@/components/metric-card"
 import {
   Card,
   CardContent,
@@ -40,7 +39,7 @@ export default async function CostDashboardPage() {
 
   const now = new Date()
 
-  // ---- Summary cards ----
+  // ---- Summary metrics ----
   const totalSpend = allLogs.reduce((s, l) => s + (l.estimated_cost || 0), 0)
 
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -54,6 +53,9 @@ export default async function CostDashboardPage() {
   const todayStr = now.toISOString().split("T")[0]
   const todayLogs = allLogs.filter((l) => l.created_at.startsWith(todayStr))
   const todaySpend = todayLogs.reduce((s, l) => s + (l.estimated_cost || 0), 0)
+
+  const totalRequests = allLogs.length
+  const avgPerRequest = totalRequests > 0 ? totalSpend / totalRequests : 0
 
   // ---- Daily cost (last 30 days) ----
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -133,50 +135,123 @@ export default async function CostDashboardPage() {
       }
     })
 
+  // ---- Monthly trend cards data ----
+  const monthlyTrendCards = Object.entries(monthlyCostMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month], idx, arr) => {
+      const [y, m] = month.split("-")
+      const d = new Date(Number(y), Number(m) - 1)
+      const cost = monthlyCostMap[month]
+      const prevCost = idx > 0 ? monthlyCostMap[arr[idx - 1][0]] : null
+      const change = prevCost !== null && prevCost > 0 ? ((cost - prevCost) / prevCost) * 100 : null
+      return {
+        label: d.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        cost,
+        change,
+      }
+    })
+
   return (
     <div className="space-y-6 px-4 lg:px-6">
-      <div>
-        <h1 className="text-2xl font-bold">Cost Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          AI spending analysis across models, features, and users
+      {/* Page Header */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Cost Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">
+          Track spending across models, features, and time periods.
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total AI Spend"
-          value={`$${totalSpend.toFixed(4)}`}
-          subtitle="All time"
-        />
-        <MetricCard
-          title="This Month"
-          value={`$${monthSpend.toFixed(4)}`}
-          subtitle={startOfMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-        />
-        <MetricCard
-          title="This Week"
-          value={`$${weekSpend.toFixed(4)}`}
-          subtitle="Last 7 days"
-        />
-        <MetricCard
-          title="Today"
-          value={`$${todaySpend.toFixed(4)}`}
-          subtitle={now.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
-        />
+      {/* Cost Summary Banner */}
+      <Card className="rounded-xl border">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-border">
+            {/* Total Cost */}
+            <div className="p-5 lg:p-6">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Total Cost
+              </p>
+              <p className="text-2xl lg:text-3xl font-semibold tabular-nums text-primary mt-1">
+                ${totalSpend.toFixed(4)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">All time</p>
+            </div>
+
+            {/* This Month */}
+            <div className="p-5 lg:p-6">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                This Month
+              </p>
+              <p className="text-2xl lg:text-3xl font-semibold tabular-nums mt-1">
+                ${monthSpend.toFixed(4)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {startOfMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+              </p>
+            </div>
+
+            {/* Per Request */}
+            <div className="p-5 lg:p-6">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Per Request
+              </p>
+              <p className="text-2xl lg:text-3xl font-semibold tabular-nums mt-1">
+                ${avgPerRequest.toFixed(6)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Average cost</p>
+            </div>
+
+            {/* Total Requests */}
+            <div className="p-5 lg:p-6">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Total Requests
+              </p>
+              <p className="text-2xl lg:text-3xl font-semibold tabular-nums mt-1">
+                {totalRequests.toLocaleString("en-US")}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">All time</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current Period Info Banner */}
+      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="h-4 w-4 shrink-0 opacity-60"
+        >
+          <path
+            fillRule="evenodd"
+            d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z"
+            clipRule="evenodd"
+          />
+        </svg>
+        <span>
+          Current period: <span className="font-medium text-foreground">{now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span>
+          {" "}&middot; Today&apos;s spend: <span className="font-medium text-foreground">${todaySpend.toFixed(4)}</span>
+          {" "}&middot; This week: <span className="font-medium text-foreground">${weekSpend.toFixed(4)}</span>
+        </span>
       </div>
 
       {/* Daily Cost Chart */}
-      <CostDailyLineChart data={dailyCostData} />
+      <div className="rounded-xl border bg-card">
+        <CostDailyLineChart data={dailyCostData} />
+      </div>
 
       {/* Cost by Model + Feature */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <CostByModelBarChart data={costByModelData} />
-        <CostByFeatureBarChart data={costByFeatureData} />
+        <div className="rounded-xl border bg-card">
+          <CostByModelBarChart data={costByModelData} />
+        </div>
+        <div className="rounded-xl border bg-card">
+          <CostByFeatureBarChart data={costByFeatureData} />
+        </div>
       </div>
 
       {/* Cost by User */}
-      <Card>
+      <Card className="rounded-xl border">
         <CardHeader>
           <CardTitle>Top Users by Cost</CardTitle>
         </CardHeader>
@@ -232,8 +307,37 @@ export default async function CostDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Monthly Trend */}
-      <MonthlyTrendChart data={monthlyTrendData} />
+      {/* Monthly Trend Chart */}
+      <div className="rounded-xl border bg-card">
+        <MonthlyTrendChart data={monthlyTrendData} />
+      </div>
+
+      {/* Monthly Trend Cards */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Monthly Breakdown</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {monthlyTrendCards.map((item) => (
+            <Card key={item.label} className="rounded-xl border">
+              <CardContent className="p-4">
+                <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
+                <p className="text-xl font-semibold tabular-nums mt-1">
+                  ${item.cost.toFixed(4)}
+                </p>
+                {item.change !== null && (
+                  <p
+                    className={`text-xs font-medium mt-1 ${
+                      item.change >= 0 ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    {item.change >= 0 ? "+" : ""}
+                    {item.change.toFixed(1)}% vs prev month
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
