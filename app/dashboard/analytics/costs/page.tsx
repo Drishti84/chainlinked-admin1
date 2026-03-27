@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
+import { MetricCard } from "@/components/metric-card"
 import {
   Card,
   CardContent,

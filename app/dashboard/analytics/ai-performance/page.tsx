@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
 import { scoreContent } from "@/lib/quality-score"
+import { MetricCard } from "@/components/metric-card"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -8,6 +9,14 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   DailyCostChart,
   CostByModelChart,

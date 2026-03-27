@@ -67,6 +67,7 @@ export default async function TokensAnalyticsPage() {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const weekLogs = allLogs.filter((l) => new Date(l.created_at) >= weekAgo)
   const tokensThisWeek = weekLogs.reduce((sum, l) => sum + (l.total_tokens ?? 0), 0)
+  const costThisWeek = weekLogs.reduce((sum, l) => sum + (l.estimated_cost || 0), 0)
 
   // Per-user breakdown
   const userMap: Record<string, { tokens: number; cost: number; requests: number; lastUsed: string }> = {}

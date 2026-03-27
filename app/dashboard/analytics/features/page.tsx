@@ -1,14 +1,11 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { FeatureAdoptionChart, FeatureHeatmapGrid } from "@/components/charts/feature-charts"
-import { MetricCard } from "@/components/metric-card"
-import { BarChart3Icon, TrendingUpIcon, UsersIcon } from "lucide-react"
+import {
+  ZapIcon,
+  DatabaseIcon,
+  UsersIcon,
+} from "lucide-react"
 
 const FEATURES = [
   { key: "generated_posts", label: "Generated Posts" },
@@ -108,90 +105,139 @@ export default async function FeaturesAnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Feature Usage Analytics</h1>
-        <p className="text-sm text-muted-foreground">Track feature adoption across users</p>
+    <div className="px-4 lg:px-6">
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight">Feature Usage</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">Analyze feature adoption and usage patterns across users.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <MetricCard
-          title="Features Tracked"
-          value={FEATURES.length}
-          icon={BarChart3Icon}
-          accent="primary"
-        />
-        <MetricCard
-          title="Most Used Feature"
-          value={`${[...featureData].sort((a, b) => b.count - a.count)[0]?.count.toLocaleString() ?? 0}`}
-          subtitle={[...featureData].sort((a, b) => b.count - a.count)[0]?.label ?? "N/A"}
-          icon={TrendingUpIcon}
-          accent="emerald"
-        />
-        <MetricCard
-          title="Users Engaged"
-          value={allUserIds.size}
-          icon={UsersIcon}
-          accent="blue"
-        />
-      </div>
-
-      <FeatureAdoptionChart data={adoptionChartData} />
-
-      <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/3">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <BarChart3Icon className="size-4" />
-            </div>
-            <div>
-              <CardTitle>Feature Adoption</CardTitle>
-              <CardDescription>{featureData.filter(f => f.count > 0).length} features with activity</CardDescription>
-            </div>
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="flex items-center gap-3 rounded-xl border bg-card p-3 hover-lift">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/8">
+            <ZapIcon className="size-4 text-primary" />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-1">
-            {featureData.map((f, i) => {
-              const colors = [
-                { badge: "bg-primary/10 text-primary", bar: "bg-primary" },
-                { badge: "bg-blue-500/10 text-blue-500", bar: "bg-blue-500" },
-                { badge: "bg-emerald-500/10 text-emerald-500", bar: "bg-emerald-500" },
-                { badge: "bg-amber-500/10 text-amber-500", bar: "bg-amber-500" },
-                { badge: "bg-destructive/10 text-destructive", bar: "bg-destructive" },
-                { badge: "bg-purple-500/10 text-purple-500", bar: "bg-purple-500" },
-              ]
-              const color = colors[i % colors.length]
-              return (
-                <div
-                  key={f.key}
-                  className={`hover:bg-muted/20 rounded-lg px-2 py-2 transition-colors space-y-1.5${f.count === 0 ? " opacity-40" : ""}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`flex size-6 shrink-0 items-center justify-center rounded-md ${color.badge}`}>
-                      <BarChart3Icon className="size-3" />
-                    </div>
-                    <span className="font-medium text-sm">{f.label}</span>
-                    <div className="ml-auto flex items-center gap-1.5">
-                      <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
-                        {f.count.toLocaleString()} records
-                      </span>
-                      <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
-                        {f.users.size} user{f.users.size !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-muted">
-                    <div
-                      className={`h-1.5 rounded-full ${color.bar} transition-all`}
-                      style={{
-                        width: `${Math.max((f.count / maxCount) * 100, 0)}%`,
-                      }}
-                    />
+          <div>
+            <p className="text-lg font-semibold tabular-nums leading-tight">{FEATURES.length}</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">Features</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border bg-card p-3 hover-lift">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/8">
+            <DatabaseIcon className="size-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-lg font-semibold tabular-nums leading-tight">{totalRecords.toLocaleString("en-US")}</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">Total Records</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border bg-card p-3 hover-lift">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/8">
+            <UsersIcon className="size-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-lg font-semibold tabular-nums leading-tight">{totalUniqueUsers}</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">Unique Users</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bubble Map ── */}
+      <div className="rounded-xl border bg-card p-6 mb-5">
+        <h3 className="text-sm font-semibold mb-5">Feature Landscape</h3>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {rankedFeatures.map((f, i) => {
+            const size = bubbleSize(f.count)
+            const colors = BUBBLE_COLORS[i % BUBBLE_COLORS.length]
+            const adoptPct = totalUniqueUsers > 0 ? Math.round((f.users.size / totalUniqueUsers) * 100) : 0
+            return (
+              <div
+                key={f.key}
+                className={`group relative flex flex-col items-center justify-center rounded-full ${colors.bg} ring-2 ${colors.ring} transition-all duration-300 hover:scale-110 hover:shadow-lg cursor-default animate-scale-in`}
+                style={{ width: size, height: size, animationDelay: `${i * 60}ms`, animationFillMode: "both" }}
+                title={`${f.label}: ${f.count.toLocaleString("en-US")} records, ${f.users.size} users, ${adoptPct}% adoption`}
+              >
+                <span className={`text-lg font-bold tabular-nums ${colors.text}`}>
+                  {f.count >= 1000 ? `${(f.count / 1000).toFixed(1)}k` : f.count}
+                </span>
+                <span className="text-[9px] text-muted-foreground leading-tight text-center px-2 truncate max-w-full">
+                  {f.label.split(" ")[0]}
+                </span>
+                {/* Hover tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  <div className="rounded-lg bg-popover border shadow-md px-3 py-2 text-center whitespace-nowrap">
+                    <p className="text-xs font-semibold">{f.label}</p>
+                    <p className="text-[10px] text-muted-foreground tabular-nums">
+                      {f.count.toLocaleString("en-US")} records · {f.users.size} users · {adoptPct}%
+                    </p>
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Feature Detail Cards — no slide bars ── */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-5">
+        {rankedFeatures.map((f, i) => {
+          const colors = BUBBLE_COLORS[i % BUBBLE_COLORS.length]
+          const adoptPct = totalUniqueUsers > 0 ? Math.round((f.users.size / totalUniqueUsers) * 100) : 0
+          return (
+            <div key={f.key} className="rounded-xl border bg-card p-4 hover:border-primary/20 transition-colors animate-slide-up" style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`size-3 rounded-full ${colors.bg} ring-1 ${colors.ring}`} />
+                <span className="text-sm font-semibold truncate">{f.label}</span>
+              </div>
+              {/* SVG ring showing adoption % */}
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0" style={{ width: 48, height: 48 }}>
+                  <svg width={48} height={48} className="-rotate-90">
+                    <circle cx={24} cy={24} r={20} fill="none" className="stroke-muted" strokeWidth={3} />
+                    <circle cx={24} cy={24} r={20} fill="none" className="stroke-primary" strokeWidth={3}
+                      strokeLinecap="round"
+                      strokeDasharray={125.6}
+                      strokeDashoffset={125.6 * (1 - adoptPct / 100)}
+                      style={{ transition: "stroke-dashoffset 0.8s ease-out" }} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-bold tabular-nums">{adoptPct}%</span>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Records</span>
+                    <span className="font-semibold tabular-nums">{f.count.toLocaleString("en-US")}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Users</span>
+                    <span className="font-semibold tabular-nums">{f.users.size}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Rank</span>
+                    <Badge variant={i === 0 ? "default" : "outline"} className="text-[9px] h-4 px-1 tabular-nums">#{i + 1}</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Charts ── */}
+      <div className="space-y-5">
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <FeatureAdoptionChart data={adoptionChartData} />
+        </div>
+
+        {heatmapUsers.length > 0 && (
+          <div className="rounded-xl border bg-card overflow-hidden">
+            <FeatureHeatmapGrid
+              users={heatmapUsers}
+              features={FEATURES.map((f) => ({ key: f.key, label: f.label }))}
+              matrix={matrixMap}
+              maxFeatures={maxUserFeatures}
+            />
           </div>
         )}
       </div>

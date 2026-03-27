@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/client"
+import { MetricCard } from "@/components/metric-card"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -67,6 +68,16 @@ async function getJobs() {
   const total = all.length
 
   return { company, research, suggestions, names, running, completed, failed, total }
+}
+
+function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "completed": return "default"
+    case "failed": return "destructive"
+    case "running":
+    case "pending": return "secondary"
+    default: return "outline"
+  }
 }
 
 export default async function JobsPage() {

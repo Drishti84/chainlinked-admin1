@@ -394,18 +394,13 @@ function ClientText({ children, className }: { children: string; className?: str
   return <span className={className}>{children}</span>
 }
 
-const PAGE_SIZE = 20
-
+/* ── Main PostList ── */
 export function PostList({ posts }: { posts: Post[] }) {
   const [selected, setSelected] = useState<Post | null>(null)
   const [conversationMessages, setConversationMessages] = useState<
     ConversationMessage[] | null
   >(null)
   const [loadingConversation, setLoadingConversation] = useState(false)
-  const [page, setPage] = useState(1)
-
-  const totalPages = Math.ceil(posts.length / PAGE_SIZE)
-  const paginatedPosts = posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   // Filter/sort state
   const [search, setSearch] = useState("")
@@ -501,57 +496,9 @@ export function PostList({ posts }: { posts: Post[] }) {
   }
 
   return (
-    <>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, posts.length)} of {posts.length}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm tabular-nums">
-              {page} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
-      <div className="grid gap-3">
-        {paginatedPosts.map((post) => (
-          <Card
-            key={post.id}
-            className="cursor-pointer transition-shadow hover:shadow-md"
-            onClick={() => setSelected(post)}
-          >
-            <CardContent className="flex items-start gap-4 pt-4 pb-4">
-              {/* Quality indicator */}
-              <div className="flex flex-col items-center gap-1 pt-0.5">
-                <div
-                  className={`flex size-10 items-center justify-center rounded-lg text-sm font-bold ${
-                    post.qualityGrade === "high"
-                      ? "bg-primary/10 text-primary"
-                      : post.qualityGrade === "medium"
-                      ? "bg-secondary/20 text-secondary-foreground"
-                      : "bg-destructive/10 text-destructive"
-                  }`}
-                >
-                  {post.qualityScore}
-                </div>
-              </div>
+    <div className="space-y-5">
+      {/* Stats Summary */}
+      <StatsBar posts={posts} />
 
       {/* Search + Sort bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -573,21 +520,66 @@ export function PostList({ posts }: { posts: Post[] }) {
           )}
         </div>
 
-              {/* Meta */}
-              <div className="flex flex-col items-end gap-1 shrink-0 text-right">
-                <span className="text-xs font-medium">{post.userName}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(post.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                </span>
-                {post.estimated_cost != null && (
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {formatCost(post.estimated_cost)}
-                  </span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-1 h-7 text-xs"
+        <div className="flex items-center gap-2">
+          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+            <SelectTrigger className="h-9 w-[150px] gap-1.5">
+              <ArrowUpDownIcon className="size-3.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Newest First</SelectItem>
+              <SelectItem value="quality">Quality Score</SelectItem>
+              <SelectItem value="tokens">Token Usage</SelectItem>
+              <SelectItem value="cost">Cost</SelectItem>
+              <SelectItem value="words">Word Count</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {filteredPosts.length !== posts.length && (
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {filteredPosts.length} of {posts.length}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Main content: sidebar filters + masonry grid */}
+      <div className="flex gap-6">
+        {/* Always-visible filter sidebar */}
+        <aside className="hidden lg:block w-52 shrink-0">
+          <div className="sticky top-4 rounded-xl border bg-card p-4">
+            <h3 className="text-sm font-semibold mb-4">Filters</h3>
+            <FilterSidebar
+              posts={posts}
+              gradeFilters={gradeFilters}
+              setGradeFilters={setGradeFilters}
+              typeFilters={typeFilters}
+              setTypeFilters={setTypeFilters}
+              sourceFilters={sourceFilters}
+              setSourceFilters={setSourceFilters}
+              statusFilters={statusFilters}
+              setStatusFilters={setStatusFilters}
+              onClearAll={clearAllFilters}
+            />
+          </div>
+        </aside>
+
+        {/* Masonry grid */}
+        <div className="flex-1 min-w-0">
+          {filteredPosts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <SearchIcon className="size-10 text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">No posts match your filters</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your search or filter criteria</p>
+            </div>
+          ) : (
+            <div className="columns-1 sm:columns-2 xl:columns-3 gap-3 [column-fill:_balance]">
+              {filteredPosts.map((post, index) => (
+                <Card
+                  key={post.id}
+                  className="group mb-3 break-inside-avoid cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/20 animate-slide-up"
+                  style={{ animationDelay: `${Math.min(index * 25, 250)}ms`, animationFillMode: "both" }}
+                  onClick={() => setSelected(post)}
                 >
                   <CardContent className="flex flex-col gap-3 p-4">
                     {/* Top: quality ring + user + date */}
@@ -650,31 +642,7 @@ export function PostList({ posts }: { posts: Post[] }) {
         </div>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm tabular-nums">
-            {page} / {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }) }}
-            disabled={page === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
-
-      {/* Full post viewer sheet */}
+      {/* ── Detail Sheet — 40% width ── */}
       <Sheet
         open={!!selected}
         onOpenChange={(open) => !open && setSelected(null)}
@@ -742,40 +710,14 @@ export function PostList({ posts }: { posts: Post[] }) {
                     </p>
                   </div>
 
-                {/* Metadata grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <UserIcon className="size-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Author:</span>
-                    <span className="font-medium">{selected.userName}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <TypeIcon className="size-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Type:</span>
-                    <Badge variant="outline" className="text-xs">
-                      {selected.post_type || "general"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <SparklesIcon className="size-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Source:</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {selected.source || "direct"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CalendarIcon className="size-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Created:</span>
-                    <span className="font-medium">
-                      {new Date(selected.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <HashIcon className="size-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Words:</span>
-                    <span className="font-medium">
-                      {selected.word_count || 0}
-                    </span>
+                  {/* Right-aligned meta line */}
+                  <div className="px-4 pb-2">
+                    <p className="text-[11px] text-muted-foreground text-right tabular-nums">
+                      {selected.word_count || 0} words · {(selected.content || "").length.toLocaleString("en-US")} chars
+                      {(selected.content?.match(/#\w+/g) || []).length > 0 && (
+                        <> · {(selected.content?.match(/#\w+/g) || []).length} tags</>
+                      )}
+                    </p>
                   </div>
 
                   {/* Action bar inside card */}
