@@ -1,6 +1,6 @@
 # ChainLinked Admin
 
-Admin dashboard for **ChainLinked** — a LinkedIn content management platform. Monitor users, AI-generated content, analytics, costs, and system health from a single panel.
+Admin dashboard for **ChainLinked** — a LinkedIn content management platform. Monitor users, AI-generated content, analytics, costs, and system health from a unified panel.
 
 ## Tech Stack
 
