@@ -1,5 +1,8 @@
 interface OpenRouterKeyInfo {
   usage: number
+  usage_daily: number
+  usage_weekly: number
+  usage_monthly: number
   limit: number | null
   is_free_tier: boolean
   rate_limit: {

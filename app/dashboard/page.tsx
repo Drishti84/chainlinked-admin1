@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { supabaseAdmin } from "@/lib/supabase/client"
+import { getOpenRouterBalance } from "@/lib/openrouter"
 import { MetricCard } from "@/components/metric-card"
 import {
   Card,
@@ -66,8 +67,12 @@ async function getOverviewMetrics() {
   ])
 
   const totalTokens = tokenData.data?.reduce((sum, r) => sum + (r.total_tokens || 0), 0) ?? 0
-  const totalCost = tokenData.data?.reduce((sum, r) => sum + (r.estimated_cost || 0), 0) ?? 0
+  const localCost = tokenData.data?.reduce((sum, r) => sum + (r.estimated_cost || 0), 0) ?? 0
   const activeUsers = new Set(activeUsersData.data?.map((r) => r.user_id)).size
+
+  // Get real cost from OpenRouter
+  const openRouterBalance = await getOpenRouterBalance()
+  const totalCost = openRouterBalance?.usage ?? localCost
 
   const userGrowth = usersPrevWeek
     ? (((usersLastWeek ?? 0) - (usersPrevWeek ?? 0)) / (usersPrevWeek ?? 1)) * 100

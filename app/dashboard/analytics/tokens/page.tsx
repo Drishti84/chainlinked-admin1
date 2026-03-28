@@ -198,33 +198,33 @@ export default async function TokensAnalyticsPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Spend (All Time)"
-          value={openRouterBalance ? `$${openRouterBalance.usage.toFixed(4)}` : `$${totalCost.toFixed(4)}`}
+          value={openRouterBalance ? `$${openRouterBalance.usage.toFixed(2)}` : `$${totalCost.toFixed(4)}`}
           subtitle={openRouterBalance ? "From OpenRouter account" : "From local logs"}
           icon={DollarSignIcon}
           accent="amber"
           compact
         />
         <MetricCard
-          title="Last 30 Days"
-          value={hasActivity ? `$${orTotalSpend.toFixed(4)}` : `$${totalCost.toFixed(4)}`}
-          subtitle={hasActivity ? `${orTotalRequests.toLocaleString()} requests` : "All time"}
+          title="This Month"
+          value={openRouterBalance ? `$${openRouterBalance.usage_monthly.toFixed(2)}` : `$${totalCost.toFixed(4)}`}
+          subtitle={openRouterBalance ? "From OpenRouter account" : "From local logs"}
           icon={HashIcon}
           accent="primary"
           compact
         />
         <MetricCard
-          title="Total Tokens"
-          value={hasActivity ? orTotalTokens.toLocaleString() : totalTokens.toLocaleString()}
-          subtitle={hasActivity ? "Prompt + completion (30d)" : "All time"}
-          icon={CoinsIcon}
+          title="This Week"
+          value={openRouterBalance ? `$${openRouterBalance.usage_weekly.toFixed(2)}` : `$${costThisWeek.toFixed(4)}`}
+          subtitle={openRouterBalance ? "From OpenRouter account" : "From local logs"}
+          icon={CalendarIcon}
           accent="blue"
           compact
         />
         <MetricCard
-          title="This Week"
-          value={`$${costThisWeek.toFixed(4)}`}
-          subtitle={`${tokensThisWeek.toLocaleString()} tokens`}
-          icon={CalendarIcon}
+          title="Today"
+          value={openRouterBalance ? `$${openRouterBalance.usage_daily.toFixed(2)}` : `$${costThisWeek.toFixed(4)}`}
+          subtitle={openRouterBalance ? "From OpenRouter account" : "From local logs"}
+          icon={CoinsIcon}
           accent="emerald"
           compact
         />
