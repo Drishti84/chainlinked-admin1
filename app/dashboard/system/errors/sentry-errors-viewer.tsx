@@ -83,6 +83,8 @@ export function SentryErrorsViewer() {
   const [issues, setIssues] = useState<SentryIssue[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [isDemo, setIsDemo] = useState(false)
 
   const fetchIssues = useCallback(async () => {
     setLoading(true)
@@ -108,14 +110,22 @@ export function SentryErrorsViewer() {
 
       if (!res.ok) {
         setIssues(demoIssues)
+        setIsDemo(true)
         return
       }
 
       const data = await res.json()
       const fetchedIssues = data.issues || []
-      setIssues(fetchedIssues.length > 0 ? fetchedIssues : demoIssues)
+      if (fetchedIssues.length > 0) {
+        setIssues(fetchedIssues)
+        setIsDemo(false)
+      } else {
+        setIssues(demoIssues)
+        setIsDemo(true)
+      }
     } catch {
       setIssues(demoIssues)
+      setIsDemo(true)
     } finally {
       setLoading(false)
     }
@@ -239,49 +249,115 @@ export function SentryErrorsViewer() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {issues.map((issue) => (
-                    <TableRow key={issue.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium leading-tight">
-                            {issue.title}
-                          </span>
-                          {issue.culprit && (
-                            <span className="text-xs text-muted-foreground truncate max-w-[400px]">
-                              {issue.culprit}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums font-medium">
-                        {Number(issue.count).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {(issue.userCount || 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getLevelBadgeVariant(issue.level)}>
-                          {issue.level}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground tabular-nums">
-                        {formatRelativeTime(issue.firstSeen)}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground tabular-nums">
-                        {formatRelativeTime(issue.lastSeen)}
-                      </TableCell>
-                      <TableCell>
-                        <a
-                          href={issue.permalink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground transition-colors"
+                  {issues.map((issue) => {
+                    const isExpanded = expandedId === issue.id
+                    return (
+                      <>
+                        <TableRow
+                          key={issue.id}
+                          className="hover:bg-muted/30 transition-colors cursor-pointer"
+                          onClick={() => setExpandedId(isExpanded ? null : issue.id)}
                         >
-                          <ExternalLinkIcon className="size-3.5" />
-                        </a>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-medium leading-tight">
+                                {issue.title}
+                              </span>
+                              {issue.culprit && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[400px]">
+                                  {issue.culprit}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums font-medium">
+                            {Number(issue.count).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {(issue.userCount || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getLevelBadgeVariant(issue.level)}>
+                              {issue.level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground tabular-nums">
+                            {formatRelativeTime(issue.firstSeen)}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground tabular-nums">
+                            {formatRelativeTime(issue.lastSeen)}
+                          </TableCell>
+                          <TableCell>
+                            {issue.permalink && issue.permalink !== "#" && (
+                              <a
+                                href={issue.permalink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLinkIcon className="size-3.5" />
+                              </a>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded && (
+                          <TableRow key={`${issue.id}-detail`}>
+                            <TableCell colSpan={7} className="bg-muted/20 p-4">
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                  <div>
+                                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Issue ID</p>
+                                    <p className="text-sm font-mono mt-0.5">{issue.shortId}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Level</p>
+                                    <p className="text-sm mt-0.5 capitalize">{issue.level}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">First Seen</p>
+                                    <p className="text-sm mt-0.5">{new Date(issue.firstSeen).toLocaleString()}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Last Seen</p>
+                                    <p className="text-sm mt-0.5">{new Date(issue.lastSeen).toLocaleString()}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Error</p>
+                                  <p className="text-sm font-medium mt-0.5">{issue.title}</p>
+                                </div>
+                                {issue.culprit && (
+                                  <div>
+                                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Source</p>
+                                    <p className="text-sm font-mono mt-0.5">{issue.culprit}</p>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-3 pt-2">
+                                  <div className="text-xs text-muted-foreground">
+                                    {Number(issue.count).toLocaleString()} events · {(issue.userCount || 0).toLocaleString()} users affected
+                                  </div>
+                                  {issue.permalink && issue.permalink !== "#" && (
+                                    <a
+                                      href={issue.permalink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                                    >
+                                      View in Sentry <ExternalLinkIcon className="size-3" />
+                                    </a>
+                                  )}
+                                  {isDemo && (
+                                    <span className="text-xs text-muted-foreground/50 italic">Demo data — connect Sentry for real issues</span>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

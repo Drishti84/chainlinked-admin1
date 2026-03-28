@@ -101,6 +101,8 @@ async function getOverviewMetrics() {
     teams: (teams ?? 0) + (companies ?? 0),
     suggestionSaveRate,
     retentionRate,
+    retainedUsers,
+    prevWeekUserCount: prevWeekUsers.size,
     totalSuggestions: suggestionsTotal,
     savedSuggestions: suggestionsSaved,
   }
@@ -344,7 +346,7 @@ export default async function DashboardPage() {
         <MetricCard
           title="Retention"
           value={`${metrics.retentionRate}%`}
-          subtitle="Week over week"
+          subtitle={`${metrics.retainedUsers}/${metrics.prevWeekUserCount} returned`}
           icon={RepeatIcon}
           accent="emerald"
           compact

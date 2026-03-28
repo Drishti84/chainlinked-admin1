@@ -378,7 +378,7 @@ export default async function AIActivityPage() {
                               low: "text-destructive border-destructive/30 bg-destructive/5",
                             }
                             return (
-                              <div key={post.id} className="w-[250px] shrink-0 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/20">
+                              <a key={post.id} href={`/dashboard/content/generated?post=${post.id}`} className="block w-[250px] shrink-0 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/20">
                                 <div className="flex items-center gap-1.5 mb-2">
                                   <div className={`flex items-center justify-center size-9 rounded-lg border text-xs font-bold tabular-nums ${gradeClasses[score.grade]}`}>
                                     {score.total}
@@ -395,7 +395,7 @@ export default async function AIActivityPage() {
                                   <span className="truncate max-w-[70px]">{getUserName(post.user_id, names)}</span>
                                   <span className="tabular-nums">{post.word_count ?? 0}w · {new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                                 </div>
-                              </div>
+                              </a>
                             )
                           })}
                         </div>
