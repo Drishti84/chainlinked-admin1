@@ -34,6 +34,7 @@ import {
   DollarSignIcon,
   SettingsIcon,
   LogOutIcon,
+  Building2Icon,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -48,6 +49,7 @@ const navGroups = [
     label: "Users",
     items: [
       { title: "All Users", url: "/dashboard/users", icon: UsersIcon },
+      { title: "Teams", url: "/dashboard/teams", icon: Building2Icon },
       { title: "Onboarding Funnel", url: "/dashboard/users/onboarding", icon: ActivityIcon },
     ],
   },
