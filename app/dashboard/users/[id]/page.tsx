@@ -50,10 +50,9 @@ async function getUserDetail(id: string) {
       .single(),
     supabaseAdmin
       .from("generated_posts")
-      .select("id, content, post_type, status, word_count, created_at")
+      .select("id, content, post_type, source, status, word_count, conversation_id, created_at")
       .eq("user_id", id)
-      .order("created_at", { ascending: false })
-      .limit(10),
+      .order("created_at", { ascending: false }),
     supabaseAdmin
       .from("scheduled_posts")
       .select("id, content, status, scheduled_for, created_at")
@@ -80,19 +79,32 @@ async function getUserDetail(id: string) {
   const totalTokens = usageLogs?.reduce((sum, r) => sum + (r.total_tokens || 0), 0) ?? 0
   const totalCost = usageLogs?.reduce((sum, r) => sum + Number(r.estimated_cost || 0), 0) ?? 0
 
-  // Count generated posts properly
-  const { count: totalGenerated } = await supabaseAdmin
-    .from("generated_posts")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", id)
+  const allUserPosts = generatedPosts ?? []
+  const recentPosts = allUserPosts.slice(0, 10)
+  const totalGenerated = allUserPosts.length
+
+  // Source breakdown
+  const sourceBreakdown: Record<string, number> = {}
+  const typeBreakdown: Record<string, number> = {}
+  for (const post of allUserPosts) {
+    const src = post.source || "direct"
+    const type = post.post_type || "general"
+    sourceBreakdown[src] = (sourceBreakdown[src] ?? 0) + 1
+    typeBreakdown[type] = (typeBreakdown[type] ?? 0) + 1
+  }
+  const sourceEntries = Object.entries(sourceBreakdown).sort((a, b) => b[1] - a[1])
+  const typeEntries = Object.entries(typeBreakdown).sort((a, b) => b[1] - a[1])
 
   return {
     profile,
-    generatedPosts: generatedPosts ?? [],
+    allUserPosts,
+    recentPosts,
     scheduledPosts: scheduledPosts ?? [],
     myPostsCount: myPostsCount ?? 0,
     templatesCount: templatesCount ?? 0,
-    totalGenerated: totalGenerated ?? 0,
+    totalGenerated,
+    sourceEntries,
+    typeEntries,
     totalTokens,
     totalCost,
   }
@@ -120,7 +132,7 @@ export default async function UserDetailPage({
     notFound()
   }
 
-  const { profile, generatedPosts, scheduledPosts, myPostsCount, templatesCount, totalGenerated, totalTokens, totalCost } = data
+  const { profile, allUserPosts, recentPosts, scheduledPosts, myPostsCount, templatesCount, totalGenerated, sourceEntries, typeEntries, totalTokens, totalCost } = data
 
   const initials = profile.full_name
     ? profile.full_name
@@ -248,6 +260,60 @@ export default async function UserDetailPage({
         />
       </div>
 
+      {/* Feature Usage Breakdown */}
+      {allUserPosts.length > 0 && (
+        <Card className="border-border/50 bg-gradient-to-br from-card via-card to-blue-500/3 overflow-hidden">
+          <CardHeader>
+            <CardTitle>Feature Usage</CardTitle>
+            <CardDescription>{totalGenerated} posts across {sourceEntries.length} features</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* By Source */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">By Source</p>
+                <div className="space-y-2.5">
+                  {sourceEntries.map(([source, count]) => {
+                    const pct = totalGenerated > 0 ? (count / totalGenerated) * 100 : 0
+                    return (
+                      <div key={source}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="capitalize font-medium">{source}</span>
+                          <span className="text-muted-foreground tabular-nums text-xs">{count} ({pct.toFixed(0)}%)</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted/50 overflow-hidden">
+                          <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              {/* By Type */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">By Post Type</p>
+                <div className="space-y-2.5">
+                  {typeEntries.map(([type, count]) => {
+                    const pct = totalGenerated > 0 ? (count / totalGenerated) * 100 : 0
+                    return (
+                      <div key={type}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="capitalize font-medium">{type}</span>
+                          <span className="text-muted-foreground tabular-nums text-xs">{count} ({pct.toFixed(0)}%)</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted/50 overflow-hidden">
+                          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recent Generated Posts */}
       <Card className="border-border/50 bg-gradient-to-br from-card via-card to-primary/3 overflow-hidden">
         <CardHeader>
@@ -255,12 +321,12 @@ export default async function UserDetailPage({
           <CardDescription>
             {totalGenerated > 10
               ? `Showing latest 10 of ${totalGenerated} posts`
-              : `${generatedPosts.length} posts`
+              : `${recentPosts.length} posts`
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {generatedPosts.length === 0 ? (
+          {recentPosts.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">No generated posts yet.</p>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-hidden">
@@ -268,6 +334,7 @@ export default async function UserDetailPage({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Content</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Words</TableHead>
@@ -275,12 +342,20 @@ export default async function UserDetailPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {generatedPosts.map((post) => (
+                  {recentPosts.map((post) => (
                     <TableRow key={post.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="max-w-[300px]">
-                        <Link href={`/dashboard/content/generated?post=${post.id}`} className="block truncate text-sm text-foreground hover:text-primary transition-colors">
-                          {post.content?.slice(0, 80) ?? "-"}
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <Link href={`/dashboard/content/generated?post=${post.id}`} className="block truncate text-sm text-foreground hover:text-primary transition-colors flex-1">
+                            {post.content?.slice(0, 80) ?? "-"}
+                          </Link>
+                          {post.conversation_id && (
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 shrink-0">chat</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[10px] capitalize">{post.source || "direct"}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{post.post_type ?? "-"}</Badge>
